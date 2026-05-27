@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How I went from vibe coding to signal coding — Emily Kang</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      line-height: 1.7;
+      color: #1a1a1a;
+      background: #fafafa;
+    }
+
+    header {
+      background: white;
+      padding: 2rem 1.5rem;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    header .container {
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+
+    .meta {
+      color: #999;
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 2rem;
+      color: #007bff;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    article {
+      background: white;
+      padding: 3rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+    }
+
+    article h2 {
+      font-size: 1.6rem;
+      margin: 2rem 0 1rem 0;
+      font-weight: 600;
+    }
+
+    article h3 {
+      font-size: 1.2rem;
+      margin: 1.5rem 0 0.75rem 0;
+      font-weight: 600;
+    }
+
+    article p {
+      margin-bottom: 1rem;
+      text-align: justify;
+    }
+
+    article ul, article ol {
+      margin: 1rem 0 1rem 2rem;
+    }
+
+    article li {
+      margin-bottom: 0.75rem;
+    }
+
+    article a {
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    article a:hover {
+      text-decoration: underline;
+    }
+
+    article code {
+      background: #f5f5f5;
+      padding: 0.25rem 0.5rem;
+      border-radius: 3px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 0.9em;
+    }
+
+    article blockquote {
+      border-left: 4px solid #e0e0e0;
+      padding-left: 1.5rem;
+      margin: 1.5rem 0;
+      color: #666;
+      font-style: italic;
+    }
+
+    .references {
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .references h3 {
+      margin-bottom: 1rem;
+    }
+
+    .references ol {
+      margin-left: 1.5rem;
+    }
+
+    .references li {
+      margin-bottom: 0.75rem;
+    }
+
+    footer {
+      background: #f5f5f5;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      color: #666;
+      font-size: 0.9rem;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      article {
+        padding: 1.5rem;
+      }
+
+      article h2 {
+        font-size: 1.3rem;
+      }
+
+      article p {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="/" class="back-link">← Back</a>
+      <h1>How I went from vibe coding to signal coding</h1>
+      <p class="meta">May 26, 2026</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <article>
+      <h2>Where I was</h2>
+
+      <p>By the end of Mortrel V1, I thought I was doing this right.</p>
+
+      <p>I wasn't prompting randomly. I did plan-driven development — every feature started with a discussion with AI that then produced a written plan. I had Codex review the plan <em>before</em> I built it, and review the implementation in several passes <em>after</em> until Codex found no high or medium priority problems. There were two gates, both AI, both catching real things. I barely read the code myself, and on paper I didn't need to: the plans were sound, I thought through the architecture and the diffs passed review.</p>
+
+      <p>It felt rigorous. It looked like the responsible version of AI-assisted coding...</p>
+
+      <h2>What I kept getting wrong</h2>
+
+      <p>The codebase turned to mush anyway.</p>
+
+      <p>Not in a way either review could see. Every plan was reasonable. Every diff locally seemed to work and do the job it was supposed to do, even if not all the bugs were caught. But "locally correct" stacked a hundred times is how you get a global mess — files that each made sense in isolation, but they had both bad and good patterns that conflicted with other areas of the codebase. By the time I wanted to refactor or add anything for V2, I knew it was too messy because, when I tried to make a plan, only AI could explain the architecture in a reasonable way, and I couldn't.</p>
+
+      <p>Robert Herbig's <a href="https://sep.com/blog/vibe-coding-evolved/"><em>Why Vibe Coding Fails</em></a> named exactly what I let happen: an AI optimizes for the shortest path to a working result — that's literally what we ask it to do — so it solves the local problem and quietly accumulates global debt. He calls it an entropy loop. And the part that stung: the model can't clean up its own mess, because it no longer understands how the pieces it wrote earlier fit together. Easier to delete than to fix.</p>
+
+      <p>That's a big reason why V1 became a redesigned V2. Yes, I wanted a new product vision with more capabilities. But a real chunk of the V1→V2 rewrite wasn't ambition, it was me deleting and refactoring the code the AI and I could no longer reason about.</p>
+
+      <p>Here's the thing I missed: even though I was reviewing <em>plans</em> and <em>diffs</em> checks whether each step is right, nothing in my loop was protecting the codebase as a whole.</p>
+
+      <p><strong>I had two judges and no guardrails.</strong></p>
+
+      <h2>The shifts</h2>
+
+      <p>So before starting V2, I stopped and went looking for how people actually keep an AI-built codebase clean. I just used Claude to do its own deep cited research. It turns out, it's not about faster prompting or bigger context. Crucially: <em>more context doesn't fix this.</em> You can hand the model the entire repo and it'll still take the shortest path, and its context window will be overloaded, so its output will be worse on top of that. The fix isn't information, it's structure.</p>
+
+      <p>Three pieces reframed it for me:</p>
+
+      <ul>
+        <li><strong><a href="https://dev.to/zeyu2001/harness-engineering-preparing-typescript-codebases-for-coding-agents-5ad0">Harness Engineering</a></strong> (Zhang Zeyu) — Build guardrails specific to your stack, for any project you actually want to work on in the long term. Zeyu says, a "repository should be treated less like a pile of code that can be executed, and more like an execution environment for agents." He also introduces the concept of affordance, like what is your codebase and environment giving to the agent that it can put to good use? The agent's quality mainly depends on the environment/codebase it's in, no matter how good models get at coding.</li>
+        <li><strong><a href="https://github.com/humanlayer/advanced-context-engineering-for-coding-agents/blob/main/ace-fca.md">Advanced Context Engineering</a></strong> (HumanLayer) — why I now read every line of my <code>AGENTS.md</code> and every line of a plan before an agent touches it. What the agent reads is the work.</li>
+        <li><strong><a href="https://sep.com/blog/vibe-coding-evolved/">Why Vibe Coding Fails</a></strong> (Robert Herbig) — the name for the whole thing. Signal coding recognizes that the input "signal" by the human must be good for the output to be good. Vibe coding assumes a vague or badly researched input will produce a good output.</li>
+      </ul>
+
+      <p>Vibe coding says a feature is complete when it "feels done", but signal coding replaces the feeling with a signal the agent can't argue with. And focuses on entering good inputs the whole way through. My job expanded from "review the AI's work" to "build the thing that tells the AI whether its work is acceptable, automatically, every time."</p>
+
+      <h2>What I did differently</h2>
+
+      <p>For Mortrel — TypeScript + Electron, here's what I did/built:</p>
+
+      <ul>
+        <li>I first wrote down my own commitments to clean code</li>
+        <li><strong>Husky pre-commit</strong> that runs the tests and a Prettier format check. Nothing lands without passing.</li>
+        <li><strong><code>npm run ready</code></strong> — one validation command that an agent can run to see if its output is correct and good enough. Not "does it compile," not "does it look right." Green <code>ready</code> or it doesn't open a PR. That's one signal that replaced the "vibe" of "done".</li>
+        <li><strong>Four custom skills</strong>: <code>distsys-review</code>, <code>security-review</code>, <code>typescript-expert</code>, and <code>naming-review</code>, written based on research on how the best TS/Electron repos are actually structured — so the agent inherits those patterns instead of reinventing a worse one each time.</li>
+        <li><strong>A daily cleanup job</strong> with Claude, so entropy gets swept continuously instead of compounding until the next rewrite.</li>
+        <li><strong>Smaller plans, sized so I can actually code-review them.</strong> My V1 plans were often bigger — so big I couldn't really read them, which meant I was rubber-stamping. Now each plan is one focused change I read line by line. A plan can still have over 1000 lines because it's so detailed. But if it is making some pretty important system changes, I think that's alright, as long as they actually understand the plan inside and out, including the areas of the codebase it is going to change. This was the #1 fix: a bad line of <em>code</em> is a bad line of code, but a bad line of a <em>plan</em> becomes hundreds of bad lines of code.</li>
+        <li><strong>Never mix structural and behavioral changes in the same commit.</strong> Refactors ship separately from features. Three things get a diff rejected on sight, mine or the agent's: an unexpected loop, functionality nobody asked for, or a test that got weakened or deleted to make things pass.</li>
+        <li><strong>Better context window management</strong>: I want to use subagents way more for just reading a codebase, or finding where things are handled. Then the main agent which is executing a plan doesn't get its context polluted by reads. The research-&gt;plan-&gt;implement flow should all use separate context! I think <code>npm run ready</code> did the most work for not only checking for correctness (do the tests pass), but for keeping the codebase formatting consistent.</li>
+      </ul>
+
+      <h2>What still doesn't work</h2>
+
+      <p>I'm not going to pretend this is finished.</p>
+
+      <ul>
+        <li>Real end-to-end UX testing isn't built yet. Testing Mortrel by hand became painful, so <strong>WebdriverIO + Mocha</strong> is the plan — but it's a plan, not a thing that exists.</li>
+        <li>Unit and smoke tests are still plain Node. <strong>Vitest</strong> is where they're going. Also not done.</li>
+        <li>The daily cleanup job is new enough that I can't yet show you it kept V2 clean. Ask me in a few months. The honest status is: I built the harness, V2 is being built inside it, and the proof is still pending.</li>
+      </ul>
+
+      <h2>Trying weekly reviews</h2>
+
+      <p>Once the skills and guardrails were in place, I started doing a weekly review. I've only run one so far — May 25–26 — so call this a v0.</p>
+
+      <p>The need is simple: after I merge a lot of code in a week, I have to at least skim it. Not every line, but the commits and PRs that actually moved the system. That's what the <code>/saturday-retro</code> skill is for — and it's why I stopped leaving old plan files sitting in the repo, where they just eat context as stale artifacts.</p>
+
+      <p>The plans live somewhere deliberate now. I made a separate <strong>projects-history</strong> repo that holds every plan across my projects (mostly Mortrel's). <code>tmp/</code> stays gitignored in the Mortrel repo, so when a change is ready to ship, <code>/archive-plans</code> moves whatever's in <code>tmp/</code> into projects-history and commits it first, then <code>/link-plan-PR</code> drops a comment on the PR for each plan involved, linking back to <code>projects-history</code>. Every change — no matter how small — traces to the plan and the reasoning behind it. When future-me asks "why did I do this?", the answer isn't just the diff.</p>
+
+      <p>The part that actually paid off: I took one big PR — 25 file changes — and read every line. Anything that looked off, code quality or logic that didn't add up, got a comment. Then I ran <code>/saturday-retro</code> over those comments and had it brainstorm how a <em>skill</em> could change so that whole class of mistake doesn't come back, and turned the cleanup into Linear tickets along the way. The point wasn't fixing 25 files — it was converting my own review comments into guardrails, so the next 25 don't need the same comments.</p>
+
+      <p>Individually the catches were small — naming, glanceability, not-spaghetti-at-a-glance. But recurrence ≥2× is exactly what converts a nitpick into a rule. AI propagates whatever it reads, so even "small bad things" can become "extensive bad patterns" that harm correctness and readability.</p>
+
+      <h3>Followup after the retro: cleaning up the codebase</h3>
+
+      <p>After that, I honestly just did a lot of clean up PRs for those same patterns. That took a day and a half. I made those PRs change the entire codebase: if there is one bad pattern, that one bad pattern should be gone, and replaced with one good pattern plus the rule behind it. That enables the codebase to become more consistently well-written rather than inconsistent. Inconsistency leads to the entropy loop this exercise is trying to end.</p>
+
+      <p>I also combed through AGENTS.md. I was curious about what might be wrong or inconsistent about it, so I asked AI to look over it. It turns out that the entire TypeScript Strictness section I put in it was based on Nest.js, which had nothing to do with my project. Because the entire section was wrong, I suspect it must have had quite a negative effect on the rest of the codebase quality. It was painful to see.</p>
+
+      <p>I fired off some more deep research, and honestly, just based specifically on TypeScript and Electron codebases. I learned that I need to understand why each line that I write in AGENTS.md should be there, if it is accurate and with no contradictions. One thing that kept coming up was, when should I use <code>undefined</code> or <code>null</code> across the codebase?</p>
+
+      <p>I was kind of surprised that I had to trigger research twice to see what the final answer is: how do Electron's two main serialization boundaries, disk write and IPC, actually handle undefined?</p>
+
+      <p>As of Electron 8.0, an <code>undefined</code> value passed over IPC (between the main process and the renderer) is preserved and remains <code>undefined</code>. It is <em>not</em> lost or converted to <code>null</code>. When data is written to disk, the main process is responsible for writing it, and the standard JS method <code>JSON.stringify</code> drops any <code>undefined</code> values if it's part of an object. It does not replace them with <code>null</code>. It simply removes the key that is <code>undefined</code>.</p>
+
+      <p>There's a lot of nuance specific to the codebase on when to use which type, so I made a new skill called <code>/null-or-undefined</code> that Claude or Codex can just call whenever they're working with function parameters or interface fields. AGENTS.md also references it, but this skill is the single source of truth on exactly how to decide to use which type.</p>
+
+      <p>This process was very worth it. I will do a weekly review every week to see how I can improve my guardrails, skills, and AGENTS.md. They still need to be revisited regularly, or the codebase and environment just won't improve. I also need to keep learning whatever I need to understand what is going on and what the best practices are.</p>
+
+      <h2>Your version will look different</h2>
+
+      <p>Almost nothing above transfers directly. Husky, <code>ready</code>, WebdriverIO, five very specific skills — that's a <em>TypeScript + Electron</em> answer to <em>my</em> problem. If you're on a different stack it's the wrong list.</p>
+
+      <p>What transfers is the shape:</p>
+
+      <ul>
+        <li>Your guardrails are the contract — write them down, tailor them to your stack.</li>
+        <li>Give the agent one verification script for "am I done" that it can run itself.</li>
+        <li>Curate what the agent reads as carefully as you review what it writes.</li>
+      </ul>
+
+      <p>At some point on my journey to 10x myself with AI, I thought I could go from using Claude Code in different terminals for a PR to 10 agents for any business/coding ops running in parallel and working together in a single day. It sounds cool and effective, but I realized I do not have a use case for that while still trying to build out V2, and it isn't how I think about work yet.</p>
+
+      <p>I think there's also a balance to things like this. 90% of my time during the week is still spent delivering on the things I said I would do. For me, that means having a roadmap of which features I need to build and when I need to get them done. If I spend too much time trying to optimize my workflow with AI, that can also end up wasting time while hoping for unverifiable "productivity gains" in the future.</p>
+
+      <h2>Takeaways</h2>
+
+      <p>I thought rigorous review <em>was</em> the discipline. That's not all — I was judging output while the foundation rotted underneath. The discipline was building more guardrails and tools for the AI to use to accurately verify its output, <em>and</em> committing to improve this affordance I give AI each week.</p>
+
+      <p>Trying to shove fifty skills into your workflow where you may not have a use for yet is the same mistake as vibe coding: motion that produces no signal. Consider taking a couple that map to a problem you actually have, adapt them, and add more only when a real gap demands it.</p>
+
+      <p>Overall, for your own AI workflow and harnessing, I think the best approach is to build it yourself and see what makes the most sense and is effective for you.</p>
+
+      <p><strong>What in your loop is still running on vibes — and what would it take to turn that into a signal?</strong></p>
+
+      <div class="references">
+        <h3>References</h3>
+        <ol>
+          <li><strong><a href="https://dev.to/zeyu2001/harness-engineering-preparing-typescript-codebases-for-coding-agents-5ad0">Harness Engineering</a></strong> (Zhang Zeyu)</li>
+          <li><strong><a href="https://github.com/humanlayer/advanced-context-engineering-for-coding-agents/blob/main/ace-fca.md">Advanced Context Engineering</a></strong> (HumanLayer)</li>
+          <li><strong><a href="https://sep.com/blog/vibe-coding-evolved/">Why Vibe Coding Fails</a></strong> (Robert Herbig)</li>
+          <li><a href="https://github.com/electron/electron/pull/20214">refactor: use v8 serialization for ipc</a> (Electron)</li>
+          <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify">JSON.stringify() - MDN Web Docs</a> (Mozilla)</li>
+        </ol>
+      </div>
+    </article>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Emily Kang. Built with signal, not vibes.</p>
+  </footer>
+</body>
+</html>
