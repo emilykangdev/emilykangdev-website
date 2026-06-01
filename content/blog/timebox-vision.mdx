@@ -1,0 +1,95 @@
+---
+title: "The product vision for Mortrel (formerly TimeBox)"
+description: "What TimeBox is and isn't"
+pubDate: "2026-05-05"
+issue: 2
+draft: false
+tags: ["mortrel", "software"]
+---
+
+Note: I wrote this before the rename to Mortrel, which happened to sound nice to me and there's no trademark for it.
+
+This essay describes TimeBox's future direction and core values. Some features ship now and others come later.
+
+## Calendars throw away a lot of data
+
+What does it mean when you make an edit in your calendar? Our answers aren't going to be the same. Maybe you wanted to go to a party, meet with someone you care about, make it to an appointment, or perhaps schedule time for self-care. 
+
+If this event doesn't happen, or it gets a bit delayed, what do you do? There might be some cases where you update or delete that event. Considering how often we may do this in a week, month or year, the changes that we make to our calendars might be useful for us to look back on.
+
+Current calendar apps, like Google Calendar, just show you the last intention you put into it. Let's call this a snapshot. These calendar apps overwrite your previous intentions every time you update them. But there's no way to undo changes, even if you accidentally modify something in ways you didn't want to.
+
+AI assistants are great at making that editing frictionless, but that also means they're great at destroying your data. No one seems to have tried to capture every change made in their calendar, so none of us know what insights we might get about our own lives. That's a problem. If you want to see Emily's thoughts on data sovereignty, check out the ["Why TimeBox"](https://trytimebox.app/blog/2026-05-03-why-timebox) post.
+
+## TimeBox planned features 
+
+TimeBox is for individuals.
+
+- TimeBox captures almost all changes you make in your Google Calendar, no matter how small. That's what it tries to guarantee. 
+
+- You own your calendar and TimeBox interaction data in JSON and MD files.
+
+- A separate post is coming on the privacy architecture — what the server can and can't see, key handling, key recovery. Worth its own piece.
+
+Here's how we will build with AI, from the ground-up:
+
+- **Input is AI-first**: Natural language and voice should be the primary way to interact with TimeBox. 
+- **The data is AI-readable**: Every calendar change is captured in a structured form an AI model can reason over, not just a human-readable log. Pattern detection, Q&A, weekly summaries all run on top of one data layer, instead of being hand-coded features with predetermined questions.
+- **Interactions with AI are locally saved**: Your conversations with AI are saved in the same JSON/MD files, alongside your calendar data. The chat history is yours, not the vendor's.
+- **BYOK by default, hosted AI optional**: Bring your own model provider key — your usage, your costs, no markup from TimeBox. If you'd rather not manage keys, TimeBox will offer an optional hosted-AI subscription. Same product either way; the subscription is for convenience, so it doesn't block any features.
+
+## Product vision
+
+What else does TimeBox try to do? Does it have any fancy integrations so you can get more things done? No. The message that we must use AI to "do more, be more productive, move faster than competitors" is a story told inside the Western "industrial clock". 
+
+This is just one perspective on how to work and use AI — it's not a fact. Many calendar and AI products appear to inherit this story without naming it. We (so far, just Emily) are not interested in making another productivity calendar app.
+
+TimeBox is meant to make it easy for you to track how you spend your time, and the data and AI can give you some concrete numbers, but you decide the job to be done (JTBD). It could be reflection, productivity, or progress on any goal that you have in life that you want to put intentional time into. 
+
+## A Day in the Life
+
+Let's imagine that you check on a Sunday evening:
+
+*You open TimeBox and see what the week actually was — what you planned Monday morning, what ended up happening, what shifted and when. Your Wednesday deep-work block got moved five times before you cancelled it. Your morning workouts mostly held; the afternoon ones mostly didn't. The 1:1 you'd been dreading got pushed twice before it happened. The AI tells you what the data shows. It doesn't tell you what you should have done differently. It doesn't tell you to do better next week. You reflect on the week with more data, and write a journal entry as usual.*
+
+### Inspirations
+
+Here are the products we're inspired by: 
+
+- iA Writer, Bear, Obsidian. Bootstrapped, consumer-oriented. 
+- Linear refused the salad bar, and thrives in the project management space. It's tasteful. Engineers love it.
+
+iA Writer's creator, Oliver Reichenstein, was once asked, "As a designer, how do you address the challenges related to abuse or excessive usage?" It's true that we can't guarantee that whatever product we make doesn't get abused. I liked this part of his response: 
+
+> When we design, we shape not just people’s visual perceptions and people’s thoughts about what they are observing, but also how they interact with it. That’s the essence of design. We shape people’s actions! So, there is an eminent ethical dimension to design. [^1]
+
+So, how can TimeBox shape people's actions? We believe that getting people to reflect and think about how they spent their time is good, and can be meaningful. The word "goals" is often saturated with productivity-app speak, but goals can take any form, size, and take as long as you may like.
+
+We want to give people data so it's easier to reflect about their time. We don't want anyone to obsess or feel guilty over their time spent. That's why this app and the AI prompts try to create a "neutral" tone. In the same vein, we refuse to let this overly compliment and validate users. It's popular for software products to let AI give sycophantic responses, but this creates barriers for reflection — the effort to be honest and have a dialogue with oneself. 
+
+## Our commitments 
+
+- We will not make this a "salad bar" AI product. There's a lot of those out there that make money by providing many integrations and services, especially if they're in B2B. There are also consumer products that throw a lot of settings and features at you.
+
+- In the same vein, we're not going to add gamification, habit tracking, or notifications that show up when you don't have TimeBox open. Those are distractions from reflection that don't align with this product. If you want those features, there are already a lot of gamified motivation apps out there.
+
+- TimeBox will not ever be used in enterprise contexts where a manager would see how their employees' calendars change. No manager dashboards. Then TimeBox would become a tool for managers to monitor their employees, and ironically be used to extract more output per hour rather than to help anyone reflect.
+
+- However, if ICs in companies or roles with precise time-keeping (like lawyers) want TimeBox for their own reflection, we may be open to creating a commercial-use-license just for individuals, where only individuals can see their own data. Kind of like the Obsidian Catalyst License. The JTBD is still up to the user. 
+
+- AI personality will never be customizable. The neutral, non-judgmental tone is part of the design, not a setting. If you want a productivity coach that tells you you're slacking, use a different product.
+
+- We **will** respect user privacy and anonymity, by only collecting what is needed, and providing explicit and simply written opt-in consent. A `timebox-docs` repo is coming soon so you can see any changes we make to our policies and data collection. Whenever we update the privacy policy or ToS, we'll send users an email about it.
+
+----
+
+What an edit in your calendar means is a real question. This app refuses to answer it for you. TimeBox helps you keep the data your calendar throws away, surfaces what it shows, and stays out of the way.
+
+The ["Why TimeBox"](https://trytimebox.app/blog/2026-05-03-why-timebox) post has the longer story behind the values. If you want updates as TimeBox ships, sign up for the [waitlist](https://trytimebox.app/waitlist) — slow cadence, occasional posts when there's something worth saying.
+
+As of this month, that's the vision.
+
+
+## Footnotes 
+
+[^1]: https://magazine.designmatters.io/oliver-reichenstein-from-ia-on-the-need-for-an-ethical-and-philosophical-approach-in-digital-design/

@@ -1,92 +1,73 @@
+import Link from "next/link"
+import { Hero } from "@/components/Hero"
+import { WorkList } from "@/components/WorkList"
+import { getAllPosts, formatDate } from "@/lib/posts"
+
 export default function Home() {
+  const latest = getAllPosts().slice(0, 4)
+
   return (
     <main>
-      <header className="header">
-        <div className="container">
-          <h1>Emily Kang</h1>
-          <p className="subtitle">Execution-focused builder.</p>
-          <p className="bio">
-            Shipping multiple products in 2026 to prove sustained velocity and develop real execution discipline. Available for result-based contracts and full-time roles starting June 1.
-          </p>
-        </div>
-      </header>
+      <Hero day="/headers/day-header.png" night="/headers/night-header.png" variant="home">
+        <h1 className="hero-title">
+          I build software that helps people{" "}
+          <span className="underline-accent">think and create.</span>
+        </h1>
+        <p className="hero-sub">Open to contract and meaningful collaboration.</p>
+      </Hero>
 
-      <div className="container">
-        <section className="section">
-          <h2>Shipping Timeline</h2>
-          <div className="timeline">
-            <div className="product in-progress">
-              <h3>TimeBox (Mortrel)</h3>
-              <p className="product-date">Encryption shipping June 2, 2026</p>
-              <p className="product-desc">
-                AI-native calendar focused on reflection and self-awareness. Shipping end-to-end encryption June 2 with blog post on signal coding. Full UX release early August.
-              </p>
-              <div className="product-tags">
-                <span className="tag in-progress">Encryption Shipping</span>
-                <span className="tag">TypeScript, Electron</span>
-              </div>
-            </div>
+      <div className="home-columns">
+        <WorkList />
 
-            <div className="product in-progress">
-              <h3>Parallax</h3>
-              <p className="product-date">Shipping June 2–5, 2026</p>
-              <p className="product-desc">
-                CLI tool for understanding codebases. Uses Claude to build diagrams, traces, and multi-modal scaffolding so you know what you're working with before editing.
-              </p>
-              <div className="product-tags">
-                <span className="tag in-progress">In Development</span>
-                <span className="tag">TypeScript, Node.js, Claude API</span>
-              </div>
-            </div>
-
-            <div className="product in-progress">
-              <h3>Stower</h3>
-              <p className="product-date">Shipping June 5–15, 2026</p>
-              <p className="product-desc">
-                AI-native search across your Photos and Messages. Built in Swift. Turns your digital history into something actually navigable.
-              </p>
-              <div className="product-tags">
-                <span className="tag in-progress">In Development</span>
-                <span className="tag">Swift, AI-native architecture</span>
-              </div>
-            </div>
-
-            <div className="product planned">
-              <h3>Kern</h3>
-              <p className="product-date">Phase 1 Launch Q4 2026</p>
-              <p className="product-desc">
-                Infinite canvas notes app. Thinking tool for making connections, not a vault for storing things.
-              </p>
-              <div className="product-tags">
-                <span className="tag planned">Planned</span>
-                <span className="tag">React, tldraw, TypeScript</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="section">
-          <h2>Get in Touch</h2>
-          <div className="contact-section">
-            <p>Open to result-based contracts, full-time roles, and conversations about execution and shipping.</p>
-            <div className="contact-links">
-              <a href="mailto:emily@emilykang.dev" className="btn">
-                Email
-              </a>
-              <a href="https://github.com/emilykang" className="btn btn-secondary">
-                GitHub
-              </a>
-              <a href="https://twitter.com/emilykang" className="btn btn-secondary">
-                Twitter
-              </a>
-            </div>
-          </div>
+        <section className="writing-col" aria-labelledby="writing-heading">
+          <h2 id="writing-heading" className="col-heading">
+            Writing
+          </h2>
+          <ul className="writing-mini">
+            {latest.map((post) => (
+              <li key={post.slug} className="writing-mini-item">
+                <Link href={`/blog/${post.slug}`} className="writing-mini-title">
+                  {post.title}
+                </Link>
+                <time
+                  className="writing-mini-date"
+                  dateTime={post.date.toISOString().slice(0, 10)}
+                >
+                  {formatDate(post.date)}
+                </time>
+              </li>
+            ))}
+          </ul>
+          <Link className="col-more" href="/blog">
+            View all writing &rarr;
+          </Link>
         </section>
       </div>
 
-      <footer className="footer">
-        <p>Building in public. Last updated May 26, 2026.</p>
-      </footer>
+      <section className="connect" id="contact" aria-labelledby="connect-heading">
+        <h2 id="connect-heading" className="connect-heading">
+          Let&rsquo;s connect
+        </h2>
+        <p className="connect-lead">
+          Open to result-based contracts, full-time roles, and conversations
+          about execution and shipping.
+        </p>
+        <div className="connect-links">
+          <a className="connect-link" href="mailto:emily@emilykang.dev">
+            <span className="connect-key">Email</span>
+            emily@emilykang.dev
+          </a>
+          <a
+            className="connect-link"
+            href="https://github.com/emilykangdev"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span className="connect-key">GitHub</span>
+            github.com/emilykangdev
+          </a>
+        </div>
+      </section>
     </main>
   )
 }

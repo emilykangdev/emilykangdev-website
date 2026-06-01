@@ -1,0 +1,132 @@
+---
+title: "How I went from vibe coding to signal coding"
+description: "I did plan-driven development and had Codex review every plan and every diff. The codebase rotted anyway. Here's the harness I built for V2 — and why yours will look nothing like mine."
+pubDate: "2026-05-26"
+issue: 4
+tags: ["mortrel", "ai-workflow"]
+---
+
+## Where I was
+
+By the end of Mortrel V1, I thought I was doing this right.
+
+I wasn't prompting randomly. I did plan-driven development — every feature started with a discussion with AI that then produced a written plan. I had Codex review the plan _before_ I built it, and review the implementation in several passes _after_ until Codex found no high or medium priority problems. There were two gates, both AI, both catching real things. I barely read the code myself, and on paper I didn't need to: the plans were sound, I thought through the architecture and the diffs passed review.
+
+It felt rigorous. It looked like the responsible version of AI-assisted coding...
+
+## What I kept getting wrong
+
+The codebase turned to mush anyway.
+
+Not in a way either review could see. Every plan was reasonable. Every diff locally seemed to work and do the job it was supposed to do, even if not all the bugs were caught. But "locally correct" stacked a hundred times is how you get a global mess — files that each made sense in isolation, but they had both bad and good patterns that conflicted with other areas of the codebase. By the time I wanted to refactor or add anything for V2, I knew it was too messy because, when I tried to make a plan, only AI could explain the architecture in a reasonable way, and I couldn't.
+
+Robert Herbig's _[Why Vibe Coding Fails](https://sep.com/blog/vibe-coding-evolved/)_ named exactly what I let happen: an AI optimizes for the shortest path to a working result — that's literally what we ask it to do — so it solves the local problem and quietly accumulates global debt. He calls it an entropy loop. And the part that stung: the model can't clean up its own mess, because it no longer understands how the pieces it wrote earlier fit together. Easier to delete than to fix.
+
+That's a big reason why V1 became a redesigned V2. Yes, I wanted a new product vision with more capabilities. But a real chunk of the V1→V2 rewrite wasn't ambition, it was me deleting and refactoring the code the AI and I could no longer reason about.
+
+Here's the thing I missed: even though I was reviewing _plans_ and _diffs_ checks whether each step is right, nothing in my loop was protecting the codebase as a whole.
+
+**I had two judges and no guardrails.**
+
+## The shifts
+
+So before starting V2, I stopped and went looking for how people actually keep an AI-built codebase clean. I just used Claude to do its own deep cited research. It turns out, it's not about faster prompting or bigger context. Crucially: _more context doesn't fix this._ You can hand the model the entire repo and it'll still take the shortest path, and its context window will be overloaded, so its output will be worse on top of that. The fix isn't information, it's structure.
+
+Three pieces reframed it for me:
+
+- **[Harness Engineering](https://dev.to/zeyu2001/harness-engineering-preparing-typescript-codebases-for-coding-agents-5ad0)** (Zhang Zeyu) — Build guardrails specific to your stack, for any project you actually want to work on in the long term. Zeyu says, a "repository should be treated less like a pile of code that can be executed, and more like an execution environment for agents." He also introduces the concept of affordance, like what is your codebase and enviroment giving to the agent that it can put to good use? The agent's quality mainly depends on the environment/codebase it's in, no matter how good models get at coding.
+- **[Advanced Context Engineering](https://github.com/humanlayer/advanced-context-engineering-for-coding-agents/blob/main/ace-fca.md)** (HumanLayer) — why I now read every line of my `AGENTS.md` and every line of a plan before an agent touches it. What the agent reads is the work.
+- **[Why Vibe Coding Fails](https://sep.com/blog/vibe-coding-evolved/)** (Robert Herbig) — the name for the whole thing. Signal coding recognizes that the input "signal" by the human must be good for the output to be good. Vibe coding assumes a vague or badly researched input will produce a good output.
+
+Vibe coding says a feature is complete when it "feels done", but signal coding replaces the feeling with a signal the agent can't argue with. And focuses on entering good inputs the whole way through. My job expanded from "review the AI's work" to "build the thing that tells the AI whether its work is acceptable, automatically, every time."
+
+## What I did differently
+
+For Mortrel — TypeScript + Electron, here's what I did/built:
+
+- I first wrote down my own commitments to clean code: [gist link](https://gist.github.com/emilykangdev/302550f7eb9dedfa1e72b16e46ba9587)
+- **Husky pre-commit** that runs the tests and a Prettier format check. Nothing lands without passing.
+- **`npm run ready`** — one validation command that an agent can run to see if its output is correct and good enough. Not "does it compile," not "does it look right." Green `ready` or it doesn't open a PR. That's one signal that replaced the "vibe" of "done".
+- **Four custom skills**: `distsys-review`, `security-review`, `typescript-expert`, and `naming-review`, written based on research on how the best TS/Electron repos are actually structured — so the agent inherits those patterns instead of reinventing a worse one each time.
+- **A daily cleanup job** with Claude, so entropy gets swept continuously instead of compounding until the next rewrite.
+- **Smaller plans, sized so I can actually code-review them.** My V1 plans were often bigger — so big I couldn't really read them, which meant I was rubber-stamping. Now each plan is one focused change I read line by line. Sometimes I even get derailed trying to understand the architecture just from trying to approve one plan, but as long as I stay more or less on track, I'm fine with that. A plan can still have over 1000 lines because it's so detailed. But if it is making some pretty important system changes, I think that's alright, as long as they actually understand the plan inside and out, including the areas of the codebase it is going to change. This was the #1 fix: a bad line of _code_ is a bad line of code, but a bad line of a _plan_ becomes hundreds of bad lines of code.
+- **Never mix structural and behavioral changes in the same commit.** Refactors ship separately from features. Three things get a diff rejected on sight, mine or the agent's: an unexpected loop, functionality nobody asked for, or a test that got weakened or deleted to make things pass.
+- **Better context window management**: Trying to do this more, and perhaps I should quantify it or make Claude use subagents more automatically. In the implementation phase, I want to use subagents way more for just reading a codebase, or finding where things are handled. Then the main agent which is executing a plan doesn't get its context polluted by reads. The research->plan->implement flow should all use separate context! I thought it was good to have use up a lot of tokens in context, but it ends up confusing the AI and makes it harder to remember where the good practices are.
+
+I think `npm run ready` did the most work for not only checking for correctness (do the tests pass), but for keeping the codebase formatting consistent. It's just a hunch.
+
+## What still doesn't work
+
+I'm not going to pretend this is finished.
+
+- Real end-to-end UX testing isn't built yet. Testing Mortrel by hand became painful, so **WebdriverIO + Mocha** is the plan — but it's a plan, not a thing that exists.
+- Unit and smoke tests are still plain Node. **Vitest** is where they're going. Also not done.
+- The daily cleanup job is new enough that I can't yet show you it kept V2 clean. Ask me in a few months. The honest status is: I built the harness, V2 is being built inside it, and the proof is still pending.
+
+## Trying weekly reviews
+
+Once the skills and guardrails were in place, I started doing a weekly review. I've only run one so far — May 25–26 — so call this a v0.
+
+The need is simple: after I merge a lot of code in a week, I have to at least skim it. Not every line, but the commits and PRs that actually moved the system. That's what the `/saturday-retro` skill is for — and it's why I stopped leaving old plan files sitting in the repo, where they just eat context as stale artifacts.
+
+The plans live somewhere deliberate now. I made a separate **projects-history** repo that holds every plan across my projects (mostly Mortrel's). `tmp/` stays gitignored in the Mortrel repo, so when a change is ready to ship, `/archive-plans` moves whatever's in `tmp/` into projects-history and commits it first, then `/link-plan-PR` drops a comment on the PR for each plan involved, linking back to `projects-history`. Every change — no matter how small — traces to the plan and the reasoning behind it. When future-me asks "why did I do this?", the answer isn't just the diff.
+
+The part that actually paid off: I took one big PR — 25 file changes — and read every line. Anything that looked off, code quality or logic that didn't add up, got a comment. Then I ran `/saturday-retro` over those comments and had it brainstorm how a _skill_ could change so that whole class of mistake doesn't come back, and turned the cleanup into Linear tickets along the way. The point wasn't fixing 25 files — it was converting my own review comments into guardrails, so the next 25 don't need the same comments.
+
+Individually the catches were small — naming, glanceability, not-spaghetti-at-a-glance. But recurrence ≥2× is exactly what converts a nitpick into a rule. AI propagates whatever it reads, so even "small bad things" can become "extensive bad patterns" that harm correctness and readability.
+
+Here's a scrubbed Gist of the result of my first retro: [link](https://gist.github.com/emilykangdev/448a459499c6525529f686839970eff1)
+
+## Followup after the retro: cleaning up the codebase
+
+After that, I honestly just did a lot of clean up PRs for those same patterns. That took a day and a half. I made those PRs change the entire codebase: if there is one bad pattern, that one bad pattern should be gone, and replaced with one good pattern plus the rule behind it. That enables the codebase to become more consistently well-written rather than inconsistent. Inconsistency leads to the entropy loop this exercise is trying to end.
+
+I also combed through AGENTS.md. I was curious about what might be wrong or inconsistent about it, so I asked AI to look over it. It turns out that the entire TypeScript Strictness section I put it into it was based on Nest.js, which had nothing to do with my project. Because the entire section was wrong, I suspect it must have had quite a negative debuff on the rest of the codebase quality. It was painful to see.
+
+I fired off some more deep research, and honestly, just based specifically on TypeScript and Electron codebases. I learned that I need to understand why each line that I write in AGENTS.md should be there, if it is accurate and with no contradictions. One thing that kept coming up was, when should I use `undefined` or `null` across the codebase?
+
+I was kind of surprised that I had to trigger research twice to see what the final answer is: how do Electron's two main serialization boundaries, disk write and IPC, actually handle undefined?
+
+As of Electron 8.0, an `undefined` value passed over IPC (between the main process and the renderer) is preserved and remains `undefined` [4]. It is _not_ lost or converted to `null`. When data is written to disk, the main process is responsible for writing it, and the standard JS method `JSON.stringify` drops any `undefined` values if it's part of an object. It does not replace them with `null`. It simply removes the key that is `undefined` [5].
+
+There's a lot of nuance specific to the codebase on when to use which type, so I made a new skill called `/null-or-undefined` that Claude or Codex can just call whenever they're working with function parameters or interface fields. AGENTS.md also references it, but this skill is the single source of truth on exactly how to decide to use which type.
+
+This process was very worth it. I will do a weekly review every week to see how I can improve my guardrails, skills, and AGENTS.md. They still need to be revisited regularly, or the codebase and environment just won't improve. I also need to keep learning whatever I need to understand what is going on and what the best practices are.
+
+## Your version will look different
+
+Almost nothing above transfers directly. Husky, `ready`, WebdriverIO, five very specific skills — that's a _TypeScript + Electron_ answer to _my_ problem. If you're on a different stack it's the wrong list.
+
+What transfers is the shape:
+
+- Your guardrails are the contract — write them down, tailor them to your stack.
+- Give the agent one verification script for "am I done" that it can run itself.
+- Curate what the agent reads as carefully as you review what it writes.
+
+I use [GStack](https://github.com/garrytan/gstack) sometimes, and some of its skills do apply to any codebase. But someone else's skill repository — however good — is only a starting point, and I believe every project/product eventually needs its own tailored set of guardrails and skills.
+
+At some point on my journey to 10x myself with AI, I thought I could go from using Claude Code in different terminals for a PR (my current workflow), to 10 agents for any business/coding ops running in parallel and working together in a single day. It sounds cool and effective, but I realized I do not have a use case for that while still trying to build out V2, and it isn't how I think about work yet.
+
+I think there’s also a balance to things like this. 90% of my time during the week is still spent delivering on the things I said I would do. For me, that means having a roadmap of which features I need to build and when I need to get them done. If I spend too much time trying to optimize my workflow with AI, that can also end up wasting time while hoping for unverifiable "productivity gains" in the future.
+
+## Takeaways
+
+I thought rigorous review _was_ the discipline. That's not all — I was judging output while the foundation rotted underneath. The discipline was building more guardrails and tools for the AI to use to accurately verify its output, _and_ committing to improve this affordance I give AI each week.
+
+Trying to shove fifty skills into your workflow where you may not have a use for yet is the same mistake as vibe coding: motion that produces no signal. Consider taking a couple that map to a problem you actually have, adapt them, and add more only when a real gap demands it.
+
+Overall, for your own AI workflow and harnessing, I think the best approach is to build it yourself and see what makes the most sense and is effective for you.
+
+What in your loop is still running on vibes — and what would it take to turn that into a signal?
+
+## References
+
+[1] **[Harness Engineering](https://dev.to/zeyu2001/harness-engineering-preparing-typescript-codebases-for-coding-agents-5ad0)** (Zhang Zeyu)
+
+[2] **[Advanced Context Engineering](https://github.com/humanlayer/advanced-context-engineering-for-coding-agents/blob/main/ace-fca.md)** (HumanLayer)
+
+[3] **[Why Vibe Coding Fails](https://sep.com/blog/vibe-coding-evolved/)** (Robert Herbig)
+
+[4] **[refactor: use v8 serialization for ipc](https://github.com/electron/electron/pull/20214)** (Electron)
+
+[5] **[Mozilla Objects Doc](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify)**: "undefined, Function, and Symbol values are not valid JSON values. If any such values are encountered during conversion, they are either omitted (when found in an object) or changed to null (when found in an array). JSON.stringify() can return undefined when passing in "pure" values like JSON.stringify(() => {}) or JSON.stringify(undefined)."

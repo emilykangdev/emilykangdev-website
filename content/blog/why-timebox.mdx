@@ -1,0 +1,73 @@
+---
+title: "Why I'm building Mortrel (formerly TimeBox)"
+description: "And my research on time"
+pubDate: "2026-05-03"
+last-updated: "2026-05-04"
+issue: 2
+author: "Emily Kang"
+draft: false
+tags: ["mortrel", "software"]
+---
+
+I want to track my time better. I have a lot of things I want to do, and read, and write, and I often meet with friends and new people. I feel happy from consistently living a balanced, contributive life where I’m supporting others around me and taking care of myself, rather than just focusing on me. I honestly think other-care is essential to self-care. 
+
+To make this a reality, I try to be intentional with each moment. I don’t think of it as being “productive” all the time. It’s more about being in tune with what I truly want to do and my responsibilities. I’m ambitious, and I rest a lot because it’s essential. Tricia Hershey describes rest as “anything that can slow you down” to connect to your body better [^1]. I like that Hershey acknowledges that “prayer is a form of rest” and I do that too. 
+
+I want my plans for each day to more closely match what I really end up doing, rather than repeatedly setting unrealistic plans about my week. By doing this, I believe I can set more realistic timelines on goals that I set, and commitments in all areas of my life overall. Those commitments also affect other people. And yes, I can get very far on developing this self-awareness by writing a journal entry at the end of the day about plans vs reality. Thinking is good. Now that I’ve posted this on the Internet, it’s good accountability to make this a proper habit. In addition, as a software builder, I wanted to build something that would make this easier to track automatically.
+
+For years, I’ve often edited my calendar 5-15 times a day, because it’s true that there are delays from commuting, sometimes I don’t feel like doing stuff at the exact right times, or unexpected things come up. I personally find it helpful to adjust things on my calendar as I go, to get a better idea of how much time to put into each activity and determine task/s to move to tomorrow. I also schedule my sleep and eating there, so yes, most of my 24 hours have activities blocked out. I realize that we can use our calendars in our own unique ways, and this frequent tracking may be off-putting to some, but it’s one method I use to balance my life.
+
+That’s how I decided that I want to own the data of every change I make in my calendar. I think it’s precious data, and I don’t want that to be lost. Then I can bring that data to any AI or app that I make to do some basic reasoning to show new insights. But all calendar apps, as far as I know, are just throwing this “edit data” away. 
+
+This is worth examining more closely. Why do I feel the impulse to collect more data about myself and quantify my life? How might it play into colonialism and its modern forms in this digital world? The most concrete insights about data sovereignty seem to come from Indigenous frameworks. 
+
+## CARE
+
+There’s the framework of CARE, formed by the Global Indigenous Data Alliance. It emphasizes that data ecosystems must serve the Collective Benefit of Indigenous people; Indigenous people have the Authority to Control their data, which enables them to have ownership of their bodies, lands, territories, and resources; those collecting and using the data have a Responsibility to share *how* researchers/institutions are supporting Indigenous people’s self-determination and benefit; and Ethics is needed to ensure that Indigenous rights and wellbeing are the “primary concern” throughout the data lifecycle and ecosystem [^2]. CARE seems like it would be a great framework to start with for any group of people involved in a research study or data collection. 
+
+Overall, I think TimeBox should also respect users’ data and wellbeing in every area of the product. I’m committed to also making ethical decisions, and following through when people want to delete their data from my database. More on this in the product vision post coming up.
+
+## TimeBox
+
+But there are a couple ways TimeBox can harm people:
+
+- It may actually encourage people to obsess over tracking their time in their calendars, which might feel a bit miserable depending on the person. 
+
+- It may also encourage people to engage with AI too much about their data, depending on how I tune the prompts. This isn’t supposed to be a typical AI product that endlessly engages users in AI conversations. 
+
+- What harmful narratives might this product reinforce in its users? If the negatives seem to outweigh the good qualities, then is TimeBox even worth continuing?
+
+- My aspiration of "stick to a schedule" quietly assumes a life with: predictable energy, executive function that turns up, a body that cooperates, obligations that hold their shape. I have that most days. A lot of people don't, like anyone managing chronic illness, depression, ADHD, or caregiving for someone whose needs don't match a clock. I wonder if, for some, a calendar might be less of a planning tool and more a daily record of what didn't happen. We have our own ways of using (or not using) calendars, based on our unique circumstances, and I think TimeBox can accomodate a variety of needs.
+
+I did more research on the third one.
+
+## Time
+
+It might feel natural to see the day as 24 fixed hours. This is an abstraction of time, not an absolute truth. There’s a complex history behind “clock time”, about privileged powerful people controlling the time of others to more effectively oppress or manage them. The name I chose for this app is also a signal to this, which I wasn’t conscious of before I read about this topic.
+
+The British were not the first to create the concept of fixed units of time. But they used fixed hours, which was useful to their desire to dominate the natural world and people with their own ideals. Colonists on missions to other countries always brought (forced) a very standardized way to see time and labor, and believed that other ways of seeing time and collaborating were less advanced [^3]. This shows an arrogant lack of understanding and open-mindedness to other cultures. 
+
+Frederick Taylor established the principles of “Scientific Management.” It’s still a pillar of Western thought. Taylorism is, to my understanding, the ideology that everything must be efficient. From personal habits to workplace operations. Based on Taylorism, some business people even calculated the amount of time it took to walk from a desk to a printer, and the microseconds it took to punch in and punch out at work [^3]. This was all for the sake of intensifying the amount of work a laborer (human being) does in one hour, or extending the hours as much as possible. Taylorism clearly doesn’t consider the time and wellbeing of laborers to be precious, it emphasizes only the company’s or owner’s own financial interests.
+
+Jenny Odell, the author of [“Saving Time”](https://www.penguinrandomhouse.com/books/672377/saving-time-by-jenny-odell/), says that modern management of others’ time may be inspired by Taylorism, but its roots truly come from “West Indian and southern U.S. plantations” in the eighteenth and nineteenth centuries [^4]. Even modern management often sees its employees as things/machines that output labor, and produce money at fixed or increasing rates. It’s not a coincidence that, today, many people find it hard to even have paid time when they’re sick, when they want to take care of their loved ones, or go on a vacation. This was and still is even more extreme with enslaved people. Please see the passage in the footnote, and I recommend getting Odell’s book. It is an uncomfortable reminder of how data collection can seriously be used for evil, and is another reference for me to reimagine how to build and run companies. That’s a side tangent though. 
+
+Today, America and Western countries have a very deep tendency to say that efficiency is good. There's constant competition. If people are not productive, if they're not setting goals and continuing to work hard in all areas, and improving and making more money, they would fall behind or “fail” in some way. To be busy is seen as being good, and people are often judged for not performing productivity. 
+
+## Back to TimeBox
+
+But I still want to make TimeBox, because I want it for myself. Current calendars are not sufficiently “AI-native” at all to me. Yes, Gemini can easily create and modify and delete events for you, or create weekly recurring events. That’s pretty limited. I’m building the foundation to create more innovative, natural ways to plan about time. I might make a public roadmap sometime. 
+
+I’ll just run this as ethically as I can. It doesn’t mean being slow. It means reflecting as I ship. The best products are opinionated, rather than showing a million settings and overhead for the user. 
+
+But why did I bother spending hours to write this post instead of building, and mentioning real problems that people may disagree with instead of glossing over them? 
+
+If we don’t want to constantly get swept up in the trends of the times, and repeat the same mistakes and harm of our previous generations, if we truly want to build a more humanistic and happy future for all people, then I think it is necessary to reflect and improve and improve our character as we try any  endeavor. 
+
+
+[^1]: https://forthewild.world/podcast-transcripts/tricia-hersey-on-deprogramming-from-grind-culture-318 
+
+[^2]: https://www.gida-global.org/care 
+
+[^3]: https://www.penguinrandomhouse.com/books/672377/saving-time-by-jenny-odell/ 
+
+[^4]: See [3]. In **Chapter 1 - "Whose Time, Whose Money"**, Odell wrote: "In Accounting for Slavery: Masters and Management, Caitlin Rosenthal surveys the bookkeeping practices of these plantations and finds an uncomfortable analogy with more contemporary business strategies: “Though modern practices are rarely compared to slaveholders’ calculations, many planters in the American South and the West Indies shared our obsession with data. They sought to determine how much labor their slaves could perform in a given amount of time, and they pushed them to achieve that maximum.” Plantation owners were some of the earliest users of what we would now call spreadsheets, producing preprinted work logs and conducting labor-timing experiments similar to the ones Taylor would become famous for many decades later. In the work logs, the enslaved appear only as names and quantities of labor. Justin Roberts, in Slavery and the Enlightenment in the British Atlantic, 1750–1807, describes how the Barbadian Society for Plantership “conceptualized a total pool of ‘labour days’ ” that an estate had at its disposal. Although they were far more subject to natural factors like the weather, plantation labor days were considered as fungible as the industrial man-hour. And as with the man-hour, their standardization obscured brutal circumstances."

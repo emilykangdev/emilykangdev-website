@@ -1,0 +1,127 @@
+---
+title: "A tale of two crons"
+description: "I tried to fix a one-line SQL bug. It turned into ~180 LOC deleted, a refactor, and three new design checks I now run on every plan."
+pubDate: 2026-05-22
+issue: 3
+tags: ["software", "distributed-systems"]
+---
+
+As background, I made V1 pull Google Calendar events directly from Google to the desktop app. I didn’t even want to use my own V1, because the UX was too inconvenient. In V2, I decided that I’d just make all my edits in Google Calendar as I usually do, and Mortrel should capture all the edits and show me stuff. That’s why I set up a Railway worker to listen for and fetch calendar edits from the Google Calendar API.
+
+I made this new system using plan-driven development. I always discuss plans, try to understand most or all lines of English before finalizing, and AI codes the rest.
+
+But a bug fix with a “1 LOC” of SQL turned into ~180 LOC deleted, a large architecture refactor, and new insights baked into my `distsys-rubric.md`. I made it to do some basic distributed systems checks on every plan.
+
+Here’s a deeper dive on what led to the large refactor, and what I did to (hopefully) prevent such bad design thinking.
+
+# My mistake
+
+According to Google’s API, one user can have many calendars, and each calendar has its own channel to subscribe to. Each calendar has its own unique sync token and “watch channel.” The sync token doesn’t have a published time-to-live (TTL), but the watch channel is explicitly stated to last 7 days before expiring.
+
+With this API contract, I thought of 2 responsibilities: rotate to a new channel, and keep getting edits so the user doesn’t experience interruptions. I originally thought these were separate functions.
+
+I made the V2 worker design have two crons operate on the same `watch_channels` table:
+
+- Reconciliation cron: This does “state reconciliation” by getting every edit. It runs at the 15th minute of every hour (`:15`).
+- Renewal cron: Ensures that channels get renewed if there’s < 48 hours left until they expire. Runs daily at 9:00 UTC.
+
+A separate system handles webhook pings from Google Calendar and fetches data from a certain polling window for one calendar.
+
+It looked clean to me and I shipped it.
+
+In hindsight, I didn’t decompose the responsibilities properly. The two crons *looked* different because they had a different cadence and superficial responsibility, but they actually did similar work on the same DB rows. This could’ve been one function. I noticed nothing because I'd named them differently, which only confirmed my mental model. AI didn’t notice either, and it’s not very reliable about checking flawed human judgment.
+
+# The small bug
+
+After making this shiny new system, there was a new bug: `/onboard-status` returned `connected: true` even when all of a user’s GCal calendar connections had expired. The proposed fix from an AI-generated plan went like this:
+
+```
+add `AND expiration > now()` to one COUNT subquery.
+```
+
+The plan defined that only 1 / N calendars needs to be connected for the user to see the status of ‘connected’, and proceed with the app as if it’s capturing all of your calendar edits. That’s pretty misleading.
+
+As I investigated this, I slowly asked: “What does the connected status mean? What does the channel system actually do? And why do I have two crons doing the same work on the same table?"
+
+# The better design (delete the cron, keep the optimization)
+
+I decided to delete the `channel-renewal-cron.ts` entirely. Reconciliation already does channel registration via `ensureChannelsForUser`. Let it do the work it was already doing.
+
+Here’s what got me: inside `renewChannel`, it passed the old channel’s sync token to the new channel. With the prior sync token inherited, the next GCal pol l on the new channel returns a small delta in ~1s. Let's call this "incremental consumption." Without it, GCal does a full window re-read that takes 5-10s.
+
+My design doc said to delete that `inheritedSyncToken` when moving to a new channel, and I thought this was right for a couple days. Without much critical thought, I assumed this incremental sync optimization saved only ~5 to 10 seconds on one ping per channel when it resets every 6.5 days (right under that 7-day TTL), and this is basically invisible to users because Mortrel is a reflection app. I thought it wasn't really worth adding these 10 lines of code to extract the inherited sync token, because I wanted to make the codebase as simple as possible for AI to reason about.
+
+That was odd because, by that time, I had already decided that v2.1 would turn this into a real AI-native calendar by making an AI-native edit flow. I think voice input would be able to change things on the fly, and you can undo, redo, and all that stuff. Now it is possible to make writes make the UX look very fast while the database catches up. I think that's eventual consistency, but agent-driven edits need a read-your-own-writes consistency [1] on, frankly, sub-second time scales.
+
+Let’s say a user has N calendars, and in the worst case, all the calendars are subscribed on different days of the week. The average number of times a user's calendars need to get renewed, or calendar channels need to get renewed, would be `N / 6.5`.
+
+The problem is that, with rapid edits and a 5-10 s latency from that channel renewal, it can cause a head-of-line blocking window. For a variable number of times a day, AI edits get queued and stalled, because they have to wait for the calendar channel that they're writing to to get renewed. This design would be correct but slow, and that’s unacceptable. As a user, I would be very annoyed with that kind of design.
+
+So I decided to keep `inheritSyncToken`, and I just removed its call site outside of the deleted `renewChannel` function into the `ensureChannelsForUser`.
+
+The net result: ~180 LOC deleted, ~10 LOC added in the right place, one cron handling what two used to do, and addressed a durability bug along the way.
+
+I also learned that GCal's `syncToken` acts as a consumer offset in a "streaming-log" model. The calendar is the log, and the sync_token is your position, while channel rotation is what Kafka would call a consumer rebalance. `inheritSyncToken` does what Kafka does for free, by hand: it hands the new consumer the prior offset so it resumes incrementally instead of re-reading the whole window. 
+
+But that's for handling millions of events a second. I don't need Kafka. My next upgrade will likely be `pg-boss` instead of regular `pg`, to handle up to 1-5K jobs per second. It’ll be enough until around 10K users.
+
+# 3 system design checks I extracted
+
+As mentioned earlier, the trap was that I compared the two crons by what they were *for* (the noun framing, like 'this one does renewal, that one does reconciliation') instead of what they actually *did* to the DB. If I'd written out their side effects line-by-line, the overlap would have jumped out.
+
+## Check 1: Two writers on one table is suspicious.
+
+For every new background job, I should list its **triggers** and **side effects**. If two jobs share side effects on the same DB rows, write both side-by-side. If one's side-effect set is a subset of the other's, they're candidates to merge. In Ousterhout's consistency rule, similar things should look similar, and different things should look different [2].
+
+## Check 2: Level-triggered convergence subsumes edge-triggered jobs.
+
+It’s the Kubernetes controller pattern, where every K8s controller is “level-triggered” for resilience to miss events and partial failures.
+
+If a regular reconciliation loop already observes state X and converges it to a desired state, don't add an edge-triggered job that acts on X. The level loop will eventually do the same work, more reliably. [3, 4].
+
+## Check 3 (nitpick): Name modules by verb, not noun.
+
+Whenever I want to make a new function, I'll write its one-line description as a **verb-phrase** listing concrete operations. Then I'll compare it to existing modules' verb-phrases. If anything overlaps, it should be examined more to see if they should go in the same function or module (any cohesive code unit). In SOLID, S is the Single Responsibility Principle, where one module should serve one actor [5]. 
+
+An actor is a human stakeholder with changing needs that force the module to change. A caller is just a piece of code that invokes a module. That's why many callers can call one module and that's just reusability, but if many actors call one module, that module should be split up.
+
+Lets look at `renewalCron` and `reconciliationCron` and apply SRP. Who is the actor behind the crons? The user. What's the thing the user wants? Capture all calendar edits. There's one actor, but they're calling on two separate modules for the same job. That's not clean architecture, and it also makes the whole system harder for AI to reason about.
+
+As nouns, `renewalCron` and `reconciliateCron` sound different. As verb-phrases, they sound almost the same: "registers fresh channels for expiring calendars, stops old ones, increments fail counter" vs "registers fresh channels for expiring calendars, stops old ones, polls events, advances sync_token." The overlap becomes instantly visible.
+
+# The rubric update
+
+I just added prompt to the `**HIGH-LEVEL RULES**` preamble at the top of my (warning: very AI-generated wall of text) `[distsys-rubric.md](https://gist.github.com/emilykangdev/70ea940a02d25c6b9533eae36c67e91e)` file:
+
+```
+Before approving a new background job/module, run three checks: (1) side-effect overlap with existing modules, (2) does a level-triggered loop already cover this work, (3) verb-name the new module and compare its work-phrase to existing modules' work-phrases.
+```
+
+The distributed systems skill that I made from all this refactoring really just compresses to a documented checklist.  I have a separate DS research file that AI maintains in the codebase, which maps the most relevant DS concepts to different areas of Mortrel’s systems.
+
+
+# Closing
+
+As a human, I just learned to read and comb over plans more thoroughly. If there’s even one line of English that doesn’t make sense, I’m happy to debate over a plan and draw my own diagrams for hours. That’s what I did here.
+
+At some point I had to learn more about how my code actually worked, and I learned it faster with AI. That’s for another blog post.
+
+For every plan that changes how Mortrel (or any other app I make) works, it has to pass these three checks before AI (or me) approves it. I confused responsibilities with their work once, and the rules from it and my own sniff test *should* prevent a similar basic system design mistake from happening again.
+
+I’m slightly more motivated to actually finish reading through *Designing Data-Intensive Applications*, but I have a lot of other books I want to read, too.
+
+I don’t aim to be experienced at any one sub-field of software engineering. I learn what I need to learn, to build what I want to build.
+
+Mortrel is the AI-native calendar I'm building: [mortrel.com](https://mortrel.com).
+
+# Citations
+
+[1] Douglas B. Terry, _Session guarantees for weakly consistent replicated data_ (1994), [Cornell page](https://www.cs.cornell.edu/courses/cs734/2000FA/cached%20papers/SessionGuaranteesPDIS_1.html)
+
+[2] John Ousterhout, _A Philosophy of Software Design_, Ch. 6 — "Different things should look different; similar things should look similar." ([Stanford PDF](https://milkov.tech/assets/psd.pdf))
+
+[3] [James Bowes, Level Triggering in Kubernetes](https://medium.com/hackernoon/level-triggering-and-reconciliation-in-kubernetes-1f17fe30333d)
+
+[4] [Chainguard, The Principle of Reconciliation](https://www.chainguard.dev/unchained/the-principle-of-reconciliation)
+
+[5] Robert Martin, _Clean Architecture_ (2017)

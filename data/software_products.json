@@ -1,0 +1,38 @@
+[
+  {
+    "name": "TimeBox (Mortrel)",
+    "tagline": "AI-native calendar for reflection and self-awareness",
+    "description": "An AI-native calendar focused on reflection and self-awareness. Shipping end-to-end encryption June 2, 2026, with a blog post on signal coding; full UX release early August.",
+    "status": "shipping",
+    "link": "https://github.com/emilykangdev/mortrel",
+    "linkType": "github",
+    "featured": true
+  },
+  {
+    "name": "Parallax",
+    "tagline": "Understand any codebase before you edit it",
+    "description": "A CLI tool that uses Claude to build diagrams, traces, and multi-modal scaffolding so you understand a codebase before editing it.",
+    "status": "in-development",
+    "link": "https://github.com/emilykangdev/parallax",
+    "linkType": "github",
+    "featured": true
+  },
+  {
+    "name": "Stower",
+    "tagline": "AI-native search across your Photos and Messages",
+    "description": "AI-native search across your Photos and Messages, built in Swift. Turns your digital history into something actually navigable.",
+    "status": "in-development",
+    "link": "https://github.com/emilykangdev/stower",
+    "linkType": "github",
+    "featured": false
+  },
+  {
+    "name": "Kern",
+    "tagline": "An infinite canvas for making connections",
+    "description": "An infinite-canvas notes app — a thinking tool for making connections, not a vault for storing things.",
+    "status": "planned",
+    "link": "https://github.com/emilykangdev/kern",
+    "linkType": "website",
+    "featured": false
+  }
+]
