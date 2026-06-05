@@ -3,7 +3,7 @@ title: "A tale of two crons"
 description: "I tried to fix a one-line SQL bug. It turned into ~180 LOC deleted, a refactor, and three new design checks I now run on every plan."
 pubDate: 2026-05-22
 issue: 3
-tags: ["software", "distributed-systems"]
+tags: ["software", "distributed-systems", "sprint"]
 ---
 
 As background, I made V1 pull Google Calendar events directly from Google to the desktop app. I didn’t even want to use my own V1, because the UX was too inconvenient. In V2, I decided that I’d just make all my edits in Google Calendar as I usually do, and Mortrel should capture all the edits and show me stuff. That’s why I set up a Railway worker to listen for and fetch calendar edits from the Google Calendar API.

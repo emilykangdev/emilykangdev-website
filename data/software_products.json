@@ -4,8 +4,8 @@
     "tagline": "AI-native calendar for reflection and self-awareness",
     "description": "An AI-native calendar focused on reflection and self-awareness. Shipping end-to-end encryption June 2, 2026, with a blog post on signal coding; full UX release early August.",
     "status": "shipping",
-    "link": "https://github.com/emilykangdev/mortrel",
-    "linkType": "github",
+    "link": "https://mortrel.com/",
+    "linkType": "website",
     "featured": true
   },
   {
@@ -31,7 +31,7 @@
     "tagline": "An infinite canvas for making connections",
     "description": "An infinite-canvas notes app — a thinking tool for making connections, not a vault for storing things.",
     "status": "planned",
-    "link": "https://github.com/emilykangdev/kern",
+    "link": "",
     "linkType": "website",
     "featured": false
   }

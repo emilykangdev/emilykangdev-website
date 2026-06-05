@@ -1,0 +1,329 @@
+---
+title: "Why I moved Mortrel's encryption to the server"
+description: "I wanted the best design in terms of privacy and encryption, but because Mortrel is a consumer AI app, the worker has to decrypt to do RAG. I moved encryption and decryption to the server. Along the way, I did a bug hunt and went down a research rabbit hole."
+pubDate: "2026-06-04"
+issue: 5
+tags: ["mortrel", "security", "sprint"]
+---
+
+# Mortrel V1
+
+There was almost no encryption. There were no users for version one because I didn't let anyone download it after trying it out myself. There wasn't even a worker/server. The desktop just pulled snapshots from Google Calendar directly.
+
+Calendar day files and AI chats were stored in a local git vault in plaintext markdown/JSON.
+
+The only thing that was encrypted was the OAuth tokens that the desktop had access to (`<userData>/google-auth.json.enc`), because it pulled from Google directly. That was encrypted via `electron.safeStorage`.
+
+So whenever I installed a new development version or just ran the app for the first time in another branch, the app would have a new signature. `safeStorage` ties its encryption to this signature, so I saw the keychain prompt a lot and that was annoying UX.
+
+# V2 needs a worker
+
+I needed a worker to really capture edits as the user made them. It wouldn't make sense for the desktop to try to pull in all that data as soon as it opens.
+
+I decided to add a worker because I didn't want to leave genuinely sensitive secrets in an Electron app, which exposes all client-side variables. Electron apps ship in an `asar` archive that anyone can unpack with a command, so all values are extractable from the installed binary. The GCP ID is public and okay to include. Google's OAuth docs for installed apps say that the client secret is "not a secret" [1], since the app needs to know it, but for web apps, the client secret shouldn't be exposed.
+
+The client secret wasn't the real exposure. The user's Google refresh token was: a long-lived credential to their entire calendar, sitting in an app that structurally can't keep secrets. And once the worker had to hold that token to poll around the clock, a second copy on the desktop was just unnecessary.
+
+# The research tangent
+
+The next mistake was that I started researching before I had written down the threat model. This is the detour that explains why the takeaways at the end are mostly about research, not encryption.
+
+I asked AI to do deep research on how consumer AI products can integrate  with many other services that involve sensitive user data, while also personalizing their app to each user. I won't go into detail about the AI stuff until I actually build it out, and then I'll make another blog post on that.
+
+It turns out that they use RAG instead of fine-tuning per user. Keeping a long history of user data can be lawful, but only with a specific purpose, and I need to allow user deletion. If a user wants to delete their data, it should be easy, and you delete literally all of their data, not just one part.
+
+I also realized that the worker had to be able to decrypt data from the database in order to build a RAG index for each user. For the product I want to build, there isn't a useful way around that. Apple is the gold standard because it offers opt-in true E2E for iCloud, but that doesn't make sense for an app that needs to read data to provide more AI insights to users.
+
+I also considered how to get Google OAuth into production. After looking at Google's docs, I realized I don't need to go through the Cloud App Security Assessment (CASA) for Mortrel. This is something I only figured out after several research runs and questioning with AI. At some point, I thought I had to shell out ~$1k+ just for a chance to get CASA approval.
+
+Fortunately, the scopes Mortrel asks for are not restricted. They're just sensitive scopes about reading and editing calendar data.
+
+I had this desire to make Mortrel as secure as I could, but first I had to make sure that I moved encryption and decryption to the worker. I accepted that as necessary because this is a consumer AI app.
+
+The second thing I had to loosen up on was taking my encryption efforts too far. At some point, I was drawing diagrams on my iPad trying to understand KMS and long-tail data purging. There was some kind of data model that I thought was good.
+
+Based on doing more deep research into encryption, I was looking into using `pg-sql` with `pgvector`, but that combination doesn't seem to have been deployed in production for good reasons. I saw it as novel work that would take one or two months, and that was finally the big red flag that stood out after reading research that felt productive. I'm not doing anything novel at a technical level with Mortrel.
+
+After wasting 2 days on this bad encryption direction, I had to ask myself, "Wait, why am I making it this complicated?" After some more back and forth with AI, I realized I don't need that long-tail stuff because that's not even in the threat model. In this blog post, did I say the threat model yet? No.
+
+# Then I decided on what the threat model actually is
+
+I went on a long, unhelpful encryption research tangent because I didn't have a clear threat model. I needed to write down what I was actually trying to protect to design the system properly.
+
+## Assets
+
+The sensitive things in Mortrel are:
+
+- Google refresh tokens, because they grant long-lived access to a user's calendar.
+- Calendar snapshot contents, because they contain personal schedule data.
+- Wrapped DEKs, because they are needed to decrypt snapshots.
+- The AWS KMS key, because it can unwrap DEKs.
+- Future RAG artifacts, because embeddings/summaries may still reveal user data.
+- The local git vault, although V2 does not try to protect it from local machine compromise.
+- The license key, which is much lower sensitivity than the Google refresh token.
+
+## Trust boundaries
+
+The important boundaries are:
+
+- Desktop -> worker over TLS.
+- Worker -> Google Calendar API.
+- Worker -> Supabase.
+- Worker -> AWS KMS.
+- Worker -> desktop when plaintext snapshot JSON is returned.
+- User's local filesystem, where the vault is already plaintext.
+
+The big architectural change was moving Google OAuth off the desktop. The desktop no longer needs the Google refresh token. The worker owns Google polling, and the desktop talks to the worker using the license key. The desktop never talks to Google.
+
+## In scope
+
+The encryption design is meant to help when:
+
+- Someone gets a Supabase database dump.
+- Someone can read snapshot rows from Supabase.
+- Someone swaps encrypted blobs between snapshot rows.
+- Someone unpacks the Electron app and reads shipped client-side files.
+- I write cross-user query bugs, assuming RLS still applies
+
+## Out of scope
+
+The encryption design does not help much when:
+
+- Malware or an attacker has access to the user's Mac.
+- Someone fully compromises the worker.
+- Someone compromises AWS KMS or my AWS account.
+- Plaintext has already been returned to the desktop.
+- Future RAG indexes or summaries leak information, because I have not rebuilt that part yet.
+
+That last one matters: this is not E2E encryption. The worker can decrypt by design. The narrower goal is that Supabase alone should not be enough to read calendar snapshots.
+
+# What I built
+
+The V2 design is application-layer envelope encryption for calendar snapshots. Most of the ideas and complexity from the original (bad) encryption plan were dropped.
+
+For each install, the worker asks AWS KMS to generate a data encryption key. The plaintext DEK encrypts snapshot blobs with AES-256-GCM. Each user has their own wrapped DEK dedicated to calendar snapshots, stored in Supabase beside the ciphertext. The KMS key never lives in Railway or Supabase.
+
+That means a Supabase-only compromise should expose ciphertext, metadata, and wrapped DEKs, but not plaintext calendar snapshots. It doesn't protect against full worker compromise, because the worker can call KMS and decrypt by design.
+
+In the future, rotating the KEK would be simple: we just unwrap all DEKs, pick the new KEK, and rewrap. Since the DEKs are not changed when the KEK is rotated, the user data doesn't need to be re-encrypted [4].
+
+At first, I made the worker keep an LRU cache of DEKs. AWS Encryption SDK provides an LRU DEK cache with security thresholds, like TTL and max-use counts for exactly this pattern [5]. I didn't use the SDK. Why? I thoughtlessly agreed with a random AI response that said AWS' own cache with best practices would add more overhead and costs than making a custom cache that's very prone to bugs and security issues. This isn't the same as rolling your own crypto, but if there is a maintained library that does the job better than what I can make myself, I should just use it.
+
+When I tried writing down with my own words why this was justified, I realized it wasn't. Before releasing this blog post, I deleted my custom cache and made the worker ping AWS KMS whenever it encrypts or decrypts data. It's cheaper than I thought, and it makes the worker-side code a lot more simple. As is common with startups, I optimized too far before even getting my first customer. I should just build for the next tier -- that's a couple hundred users, not thousands. Here's an AI-generated table with a rough cost estimate for KMS if Mortrel had 10,000 users:
+
+| Source                           | Assumption                              | Unwraps/day         |
+| -------------------------------- | --------------------------------------- | ------------------- |
+| Hourly reconciliation sweep      | 10,000 installs × 24 ticks              | 240k                |
+| Webhook-triggered polls          | ~30 calendar changes/user/day           | 300k                |
+| Desktop sync (`snapshots-since`) | ~20–50 pulls/user/day while app is open | 200k–500k           |
+| OAuth/channel ops                | rounding error                          | ~10k                |
+| **Total**                        |                                         | **~750k–1.05M/day** |
+
+28–33M calls/month × $0.03 per 10k = $84–$99/mo, call it ~$140 with headroom for heavy calendar users. Plus $1/mo for the KMS key itself. It's not much.
+
+As context, 10,000 users × $25/mo subscription = $250k MRR. KMS would just be 0.03–0.06% of revenue. A cache would cut it ~10× and save me maybe a hundred bucks against a quarter-million in revenue.
+
+## Side note
+
+V2 stores the license activation ID and license key in plaintext local storage.
+
+I'm alright with that because the license key isn't in the same class as the Google refresh token. A leaked Google refresh token gives access to a user's calendar. A leaked license key lets someone impersonate an activated install to Mortrel's worker. That's still a bearer credential, but the blast radius is much smaller and fits the local-machine-compromise tradeoff I already accepted.
+
+If malware or an attacker can read the user's local files, Mortrel has already lost because the local git vault is plaintext too. Putting the license key in Keychain would mostly add UX friction without changing that threat model.
+
+## The rest
+
+So after I made this basic encryption structure, I had to remove the unnecessary code in the desktop, which was mainly any kind of crypto that the desktop had. There's no longer anything on the desktop that's worth encrypting with the old way. Specifically, I removed things like `Curve25519` keypairs, `libsodium`, and the `safeStorage`-encrypted OAuth bundle.
+
+Then I made the code for a new route for the desktop to call, because now the worker decrypts stuff server-side and it just serves plaintext JSON over TLS to the desktop. All the desktop needs to do is parse JSON.
+
+# Using AAD
+
+I encrypted snapshot blobs with AES-GCM, and AES-GCM also has additional authenticated data (AAD). These are bytes mixed into the authentication tag, but they aren't encrypted. AES-GCM provides confidentiality and authenticity, while AAD focuses on authentication.
+
+Decryption only succeeds if the auth tag — a MAC over the ciphertext and AAD, keyed by the DEK — verifies. The tag is 16 bytes and one-way: it can confirm the AAD you supply is the one used at encrypt time, but it can't tell you what that AAD was.
+
+```
+tag ≈ keyed_hash(DEK, nonce, ciphertext, AAD) — one-way like a hash, forgeable by no one without the key. The tag is 16 bytes no matter how much data it covers.
+```
+
+AAD came in because AWS' own Encryption Context [6] is basically an AAD that I decided to bind to some of my own application-specific data. Every time a worker encrypts a snapshot row, the AAD binds the row's identity with the other metadata in that row. For example:
+
+```
+- install UUID
+- DEK version
+- day
+- calendar ID
+- snapshot ID
+```
+
+What happens if a blob is placed in the wrong row? At decrypt time, the worker rebuilds the AAD from the columns of the row and hands it to AES-GCM. The blob's auth tag was sealed over the original row's columns, so the tag check fails and the blob refuses to decrypt.
+
+Most likely, if there is an error about an undecryptable ciphertext, it will be caused in my own code. AAD makes it easier to identify the root cause.
+
+## Date/string bug
+
+Upon encryption, the worker gave a 10-byte string in the format `YYYY-MM-DD`. Upon decryption, based on the JS `date` type, the worker gave a 24-byte string with milliseconds tacked on by doing `toISOString()`, which has the default output format `YYYY-MM-DDTHH:mm:ss.sssZ` [7]. Thus, decryption used to always fail because the AAD bytes weren't exactly the same.
+
+My code below had a canonicalization failure, because every logical value when building an AAD or doing anything related to crypto _should_ map exactly one type in to one sequence/type out. Instead, we had this messy `recordKey`:
+
+```ts
+export function buildAad(
+  table: string,
+  installUuid: string,
+  dekVersion: number,
+  ...recordKey: (string | Date | Buffer)[]
+): Buffer {
+  const parts: Buffer[] = [
+    Buffer.from(table, 'utf8'),
+    Buffer.from(installUuid, 'utf8'),
+    Buffer.from(String(dekVersion), 'utf8'),
+    ...recordKey.map((k): Buffer => {
+      if (Buffer.isBuffer(k)) return k;
+      if (k instanceof Date) return Buffer.from(k.toISOString(), 'utf8'); // <---- The bug
+      return Buffer.from(String(k), 'utf8');
+    }),
+  ];
+```
+
+Here are 2 fixes I made to solve this bug:
+
+```diff
+export function buildAad(
+    table: string,
+    installUuid: string,
+    dekVersion: number,
+-  ...recordKey: (string | Date | Buffer)[]
++  ...recordKey: string[]
+): Buffer {
+    // ...
+-    ...recordKey.map((k): Buffer => {
+-      if (Buffer.isBuffer(k)) return k;
+-      if (k instanceof Date) return Buffer.from(k.toISOString(), 'utf8');
+-      return Buffer.from(String(k), 'utf8');
+-    }),
++    ...recordKey.map((k): Buffer => Buffer.from(k, 'utf8')),
+```
+
+In the database schema, I made the `day` column in the calendar `snapshots` table have the type `date` [8]. The Postgres driver for Node (`node-postgres`, the npm package `pg`) [9] converts `date` columns into a JS `Date` if a `SELECT` asks for the `day` as a `date`:
+
+```ts
+// Note the ::text for day and captured_at
+SELECT day::text AS day, captured_at::text AS captured_at_token, kind, calendar_id,
+         ciphertext, nonce, dek_version, snapshot_id
+    FROM snapshots
+   WHERE install_uuid = $1
+     AND ($2::text IS NULL
+          OR (captured_at, snapshot_id) > ($2::timestamptz, $3::uuid))
+   ORDER BY captured_at ASC, snapshot_id ASC
+```
+
+But I didn't have to change the schema at all. They were just selected as text. Basically, I changed the SQL and AAD contract to guarantee that the retrieved `day` would be a string in the format `YYYY-MM-DD`.
+
+## Collision bug
+
+What was a consequence of using `YYYY-MM-DD`? Snapshots for the same day, calendar and user had the same AAD. If the blobs of such snapshot rows swapped, they would still be decryptable. That breaks the authentication promise. I couldn't use `captured_at` to fix this because that's generated by `pg` _after_ the encrypted blob is inserted into the database. By that time, AAD was already built and baked into the blob.
+
+That's why I added a unique and randomly generated snapshotId.
+
+```diff
+// poll-user.ts
+-      // AAD binds (snapshots, install_uuid, dek_version, day, kind, '') — the
+-      // empty-string sentinel is the calendar_id slot (NULL for delta/full).
+-      // captured_at is NOT in AAD (server-set via clock_timestamp). See aad-spec.md.
+-      const aad = buildAad('snapshots', installUuid, dekVersion, day, incrementalSnapshotKind, '');
++      // AAD binds (snapshots, install_uuid, dek_version, day, kind, '', snapshot_id)
++      // — the empty-string sentinel is the calendar_id slot (NULL for delta/full),
++      // and snapshot_id is the per-row uniqueness anchor. captured_at is NOT in
++      // AAD (server-set via clock_timestamp). See aad-spec.md.
++      const snapshotId = crypto.randomUUID();
++      const aad = buildAad(
++        'snapshots',
++        installUuid,
++        dekVersion,
++        day,
++        incrementalSnapshotKind,
++        '',
++        snapshotId, // <- new column!
++      );
+```
+
+And this new `snapshot_id` is inserted into the database:
+
+```diff
+- (install_uuid, day, captured_at, kind, calendar_id, content_hash, ciphertext, nonce, dek_version, byte_size)
+- VALUES ($1, $2, clock_timestamp(), $3, NULL, $4, $5, $6, $7, $8)`,
++ (install_uuid, day, captured_at, kind, calendar_id, content_hash, ciphertext, nonce, dek_version, byte_size, snapshot_id)
++ VALUES ($1, $2, clock_timestamp(), $3, NULL, $4, $5, $6, $7, $8, $9)`,
+```
+
+This was a fairly easy bug to catch, but any bug related to encryption/decryption can make rows completely inaccessible. I want to be more careful about catching those in the future.
+
+## A near-miss null, but not a bug
+
+This almost looked like a canonicalization failure, but it wasn't. `calendar_id` is `NULL` in a delta snapshot. A delta snapshot pulls edits for one day across all of the user's calendars since the last sync token. Since `calendar_id` is nullable and is needed by AAD, it needs one defined encoding to represent null. We chose `''`.
+
+On the encrypt side:
+
+```ts
+// poll-user.ts
+const aad = buildAad(
+  // ...
+  "", // calendar_id is NULL for kind=delta — empty-string sentinel
+  // ...
+);
+```
+
+On the decrypt side:
+
+```ts
+row.calendar_id ?? '', // same NULL→'' sentinel used at encrypt time.
+```
+
+# The thing that made all of this cheap: zero users
+
+Zero users is not a migration. This was a rebuild. I could break everything in the process, and I'm going to need to consider exactly what order to do things to not introduce regressions to users. All I have to do is consider the order to do things to make sure the codebase still passes the tests that need to pass.
+
+# What still doesn't work
+
+The desktop doesn't decrypt anything or possess any keys. The server sends plaintext JSON over TLS to the desktop. Adding desktop decryption using a DEK would just increase the surface area for a per-install key to leak. Mortrel's threat model intentionally doesn't care about an attacker that compromises the local machine.
+
+I still need to figure out which tables should have data that's encrypted at rest or not. That'll be another research deep dive.
+
+I didn't rebuild the AI stuff yet.
+
+# Takeaways
+
+I wish I could go for the most privacy-pure architecture that's also E2E, but then this wouldn't be a consumer AI app.
+
+The main thing I learned from this encryption sprint: what took up the most time and effort was that research tangent.
+
+I want to generalize that a bit more to any sprint. While I'm scoping out a sprint, I should know what the requirements are and what assumptions I'm making. I'll update my research skill, which I use for everything, to drill into those questions on what topics to research.
+
+Since a deep research prompt produces a large, important result similar to code, a clear signal should go into that for a clear signal to come out. HumanLayer made a nice diagram showing how one bad line of AGENTS.md can cause 100K+ lines of bad code [10]. I'd like to add one more layer at the very bottom of that impact hierarchy pyramid for coding agents.
+
+From my experience, one bad prompt for research -- not at the level of a codebase but for product/company direction -- can cause months of damage to a product roadmap. I'm glad I kept digging into a CASA thing to correct my direction on it (AKA I don't need it), and didn't dive into unnecessary novel engineering work just to add encryption to Mortrel.
+
+I also learned to just not over-engineer. Build what you need to scale up to the next most reasonable level of users.
+
+# References
+
+[1] Google Identity — Using OAuth 2.0 for Installed Applications: "the client secret is obviously not treated as a secret." https://developers.google.com/identity/protocols/oauth2#installed
+
+[2] AWS CLI — Configuration and credential files: the access key ID and secret access key (strictly more sensitive than a license key) live in plaintext `~/.aws/credentials`; file permissions are the only control. https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html
+
+[3] AWS KMS Developer Guide — KMS keys, key hierarchy, and data keys (envelope encryption). https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html
+
+[4] AWS KMS Developer Guide — Rotate AWS KMS keys: "Key rotation has no effect on the data that the KMS key protects. It does not … re-encrypt any data protected by the KMS key," and rotated keys decrypt pre-rotation ciphertext transparently, "without code changes." https://docs.aws.amazon.com/kms/latest/developerguide/rotate-keys.html
+
+[5] AWS Encryption SDK — Data key caching details: the `LocalCryptoMaterialsCache` is "a configurable, in-memory, least recently used (LRU) cache," with TTL and max-use security thresholds enforced by the caching CMM. https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/data-caching-details.html
+
+[6] AWS KMS Developer Guide — Encryption context: "AWS KMS uses the encryption context as additional authenticated data (AAD) to support authenticated encryption." https://docs.aws.amazon.com/kms/latest/developerguide/encrypt_context.html
+
+[7] MDN — `Date.prototype.toISOString()`: output is always `YYYY-MM-DDTHH:mm:ss.sssZ` (millisecond precision). https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toISOString
+
+[8] PostgreSQL Documentation — Date/Time Types (Table 8.9: `date` has 1-day resolution; `timestamp`/`timestamptz` store up to 6 fractional digits — microseconds). https://www.postgresql.org/docs/current/datatype-datetime.html
+
+[9] node-postgres — Data Types: `date`/`timestamp`/`timestamptz` columns are parsed into JS `Date` objects by default. It points out the issue I ran into: "your microseconds will be truncated when converting to a JavaScript date object"; `::text` casts bypass type parsing entirely. https://node-postgres.com/features/types
+
+[10] HumanLayer — Advanced Context Engineering for Coding Agents. https://github.com/humanlayer/advanced-context-engineering-for-coding-agents/blob/main/ace-fca.md
