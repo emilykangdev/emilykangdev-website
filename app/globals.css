@@ -26,6 +26,10 @@
   --hairline: #d9cdb4;
   --pill-bg: #ece0c6;
   --scrim: linear-gradient(to top, rgba(244, 234, 212, 0.55), transparent 55%);
+  --diff-add: #4a6741;
+  --diff-add-bg: rgba(95, 107, 79, 0.14);
+  --diff-del: #a23c2a;
+  --diff-del-bg: rgba(162, 60, 42, 0.1);
 }
 
 :root[data-theme="night"] {
@@ -38,6 +42,10 @@
   --hairline: #2e2a22;
   --pill-bg: #2a241b;
   --scrim: linear-gradient(to top, rgba(20, 17, 13, 0.85), rgba(20, 17, 13, 0.15) 60%, transparent);
+  --diff-add: #a4c188;
+  --diff-add-bg: rgba(122, 148, 90, 0.18);
+  --diff-del: #e2917c;
+  --diff-del-bg: rgba(186, 73, 49, 0.18);
 }
 
 html {
@@ -707,7 +715,8 @@ a {
   border-left: 3px solid var(--accent);
   border-radius: 8px;
   padding: 1.1rem 1.25rem;
-  overflow-x: auto;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
   font-size: 0.86rem;
   line-height: 1.6;
 }
@@ -716,6 +725,42 @@ a {
   background: none;
   padding: 0;
   color: var(--ink);
+}
+
+/* tables (remark-gfm) — print-style data panel, kin to the code panel */
+.prose table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-top: 3px solid var(--accent);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.prose th {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  text-align: left;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--hairline);
+}
+.prose td {
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--hairline);
+  vertical-align: top;
+}
+.prose th + th,
+.prose td + td {
+  border-left: 1px solid var(--hairline);
+}
+.prose tbody tr:last-child td {
+  border-bottom: none;
 }
 
 /* footnotes (remark-gfm) */
@@ -775,6 +820,16 @@ a {
   color: var(--ink);
   font-weight: 600;
 }
+.hljs-addition {
+  color: var(--diff-add);
+  background: var(--diff-add-bg);
+  border-radius: 3px;
+}
+.hljs-deletion {
+  color: var(--diff-del);
+  background: var(--diff-del-bg);
+  border-radius: 3px;
+}
 
 /* ============================================================
    FOOTER
@@ -830,6 +885,13 @@ a {
   }
   .prose {
     font-size: 1.05rem;
+  }
+  .prose table {
+    font-size: 0.85rem;
+  }
+  .prose th,
+  .prose td {
+    padding: 0.55rem 0.65rem;
   }
   .connect-links {
     flex-direction: column;

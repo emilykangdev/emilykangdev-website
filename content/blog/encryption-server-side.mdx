@@ -282,7 +282,7 @@ row.calendar_id ?? '', // same NULL→'' sentinel used at encrypt time.
 
 # The thing that made all of this cheap: zero users
 
-Zero users is not a migration. This was a rebuild. I could break everything in the process, and I'm going to need to consider exactly what order to do things to not introduce regressions to users. All I have to do is consider the order to do things to make sure the codebase still passes the tests that need to pass.
+Zero users is not a migration. This was a rebuild. I could break everything in the process, without worrying about user-facing regressions. All I did was consider the order to do things to make sure the codebase still passes the tests that need to pass, and add tests for new invariants.
 
 # What still doesn't work
 
