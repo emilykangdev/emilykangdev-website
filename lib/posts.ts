@@ -66,11 +66,36 @@ function readPost(file: string): Post {
     date: coerceDate(data.pubDate ?? data.date),
     series,
     product,
-    topics: Array.isArray(data.topics) ? data.topics.map(String) : [],
+    topics: parseTopics(file, data.topics),
     issue: typeof data.issue === "number" ? data.issue : undefined,
     author: data.author ? String(data.author) : undefined,
     body: content,
   }
+}
+
+// Topics are freeform, but they share one filter namespace with series/products,
+// so they must be a list of unique, non-empty strings that don't collide with a
+// registered slug. A scalar (`topics: security`) or a collision fails the build
+// rather than silently dropping or contaminating a facet.
+function parseTopics(file: string, raw: unknown): string[] {
+  if (raw === undefined) return []
+  if (!Array.isArray(raw)) {
+    throw new Error(`${file}: topics must be a list, got ${JSON.stringify(raw)}`)
+  }
+  const topics: string[] = []
+  for (const t of raw) {
+    if (typeof t !== "string" || t.trim() === "") {
+      throw new Error(`${file}: each topic must be a non-empty string, got ${JSON.stringify(t)}`)
+    }
+    if (SERIES_SLUGS.has(t) || PRODUCT_SLUGS.has(t)) {
+      throw new Error(`${file}: topic "${t}" collides with a registered series/product slug — rename it`)
+    }
+    if (topics.includes(t)) {
+      throw new Error(`${file}: duplicate topic "${t}"`)
+    }
+    topics.push(t)
+  }
+  return topics
 }
 
 function isDraft(file: string): boolean {

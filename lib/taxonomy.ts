@@ -20,6 +20,14 @@ export const PRODUCTS: TagDef[] = [{ slug: "mortrel", label: "Mortrel" }]
 export const SERIES_SLUGS = new Set(SERIES.map((s) => s.slug))
 export const PRODUCT_SLUGS = new Set(PRODUCTS.map((p) => p.slug))
 
+// Series and products share one filter namespace (`/blog?tag=`), so their slugs
+// must be disjoint — a slug that's both would make a filter ambiguous.
+for (const slug of PRODUCT_SLUGS) {
+  if (SERIES_SLUGS.has(slug)) {
+    throw new Error(`taxonomy: slug "${slug}" is registered as both a series and a product`)
+  }
+}
+
 const LABELS = new Map(
   [...SERIES, ...PRODUCTS].map((t) => [t.slug, t.label] as const)
 )
