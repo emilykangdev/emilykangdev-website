@@ -511,6 +511,10 @@ a {
   margin: clamp(1.5rem, 4vh, 3rem) auto 0;
   padding: 0 clamp(1.1rem, 4vw, 2.5rem);
 }
+/* Only the tag page puts a back-link inside .page-body, above the list. */
+.page-body > .back-link {
+  margin-bottom: clamp(1.25rem, 3vh, 1.75rem);
+}
 .year-group {
   margin-bottom: clamp(2.5rem, 6vh, 4rem);
 }
@@ -590,6 +594,17 @@ a {
   background: var(--pill-bg);
   border-radius: 999px;
   padding: 0.18rem 0.55rem;
+}
+/* Tags are now links; keep them quiet, lift only on hover. */
+a.tag,
+a.byline-tag {
+  text-decoration: none;
+  transition: color 0.18s ease, background-color 0.18s ease;
+}
+a.tag:hover,
+a.byline-tag:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 16%, var(--pill-bg));
 }
 
 /* ============================================================

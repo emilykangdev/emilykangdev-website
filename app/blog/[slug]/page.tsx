@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm"
 import rehypeHighlight from "rehype-highlight"
 import { Hero } from "@/components/Hero"
 import { mdxComponents } from "@/components/mdxComponents"
+import { TagLink } from "@/components/TagLink"
 import { getAllPosts, getPostBySlug, formatDate } from "@/lib/posts"
 
 export const dynamicParams = false
@@ -50,9 +51,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
             {formatDate(post.date)}
           </time>
           {post.tags.map((t) => (
-            <span key={t} className="byline-tag">
-              {t}
-            </span>
+            <TagLink key={t} tag={t} variant="byline-tag" />
           ))}
           <span className="byline-author">{post.author ?? "Emily Kang"}</span>
         </p>

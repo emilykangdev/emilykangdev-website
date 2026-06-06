@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { getAllPosts, formatDate, getYear, type Post } from "@/lib/posts"
+import { TagLink } from "@/components/TagLink"
 
 export function WritingIndex({ posts = getAllPosts() }: { posts?: Post[] } = {}) {
   const years = groupByYear(posts)
@@ -26,9 +27,7 @@ export function WritingIndex({ posts = getAllPosts() }: { posts?: Post[] } = {})
                     {formatDate(post.date)}
                   </time>
                   {post.tags.map((t) => (
-                    <span key={t} className="tag">
-                      {t}
-                    </span>
+                    <TagLink key={t} tag={t} variant="tag" />
                   ))}
                 </p>
               </li>

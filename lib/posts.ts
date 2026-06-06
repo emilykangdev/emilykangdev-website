@@ -77,3 +77,15 @@ export function getPostBySlug(slug: string): Post | null {
   if (!file) return null
   return readPost(file)
 }
+
+export function getAllTags(): string[] {
+  const seen = new Set<string>()
+  for (const post of getAllPosts()) {
+    for (const tag of post.tags) seen.add(tag)
+  }
+  return [...seen]
+}
+
+export function getPostsByTag(tag: string): Post[] {
+  return getAllPosts().filter((p) => p.tags.includes(tag))
+}
