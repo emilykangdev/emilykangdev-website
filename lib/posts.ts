@@ -89,3 +89,24 @@ export function getAllTags(): string[] {
 export function getPostsByTag(tag: string): Post[] {
   return getAllPosts().filter((p) => p.tags.includes(tag))
 }
+
+// Posts sharing the most tags with `slug`, most-shared first then newest. If
+// none share a tag, fall back to the 2 most-recent posts. `slug` is excluded.
+export function getRelatedPosts(slug: string, limit = 3): Post[] {
+  const all = getAllPosts()
+  const others = all.filter((p) => p.slug !== slug)
+  const current = all.find((p) => p.slug === slug)
+  if (!current) return others.slice(0, 2)
+
+  const currentTags = new Set(current.tags)
+  const shared = others
+    .map((post) => ({
+      post,
+      count: post.tags.filter((t) => currentTags.has(t)).length,
+    }))
+    .filter((x) => x.count > 0)
+    .sort((a, b) => b.count - a.count || b.post.date.getTime() - a.post.date.getTime())
+
+  if (shared.length === 0) return others.slice(0, 2)
+  return shared.slice(0, limit).map((x) => x.post)
+}

@@ -7,6 +7,7 @@ import rehypeHighlight from "rehype-highlight"
 import { Hero } from "@/components/Hero"
 import { mdxComponents } from "@/components/mdxComponents"
 import { TagLink } from "@/components/TagLink"
+import { RelatedPosts } from "@/components/RelatedPosts"
 import { getAllPosts, getPostBySlug, formatDate } from "@/lib/posts"
 
 export const dynamicParams = false
@@ -68,6 +69,8 @@ export default function PostPage({ params }: { params: { slug: string } }) {
             }}
           />
         </div>
+
+        <RelatedPosts slug={post.slug} />
 
         <Link className="back-link back-link--end" href="/blog">
           &larr; Back to writing
