@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { getAllPosts, formatDate, getYear, type Post } from "@/lib/posts"
+import { getAllPosts, formatDate, getYear, postTags, type Post } from "@/lib/posts"
 import { TagLink } from "@/components/TagLink"
 
 export function WritingIndex({ posts = getAllPosts() }: { posts?: Post[] } = {}) {
@@ -26,7 +26,7 @@ export function WritingIndex({ posts = getAllPosts() }: { posts?: Post[] } = {})
                   <time dateTime={post.date.toISOString().slice(0, 10)}>
                     {formatDate(post.date)}
                   </time>
-                  {post.tags.map((t) => (
+                  {postTags(post).map((t) => (
                     <TagLink key={t} tag={t} variant="tag" />
                   ))}
                 </p>

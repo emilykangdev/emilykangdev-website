@@ -1,6 +1,7 @@
 import fs from "node:fs"
 import path from "node:path"
 import matter from "gray-matter"
+import { PRODUCTS, SERIES_SLUGS, PRODUCT_SLUGS, type TagDef } from "./taxonomy"
 
 const ROOT = path.join(process.cwd(), "content/blog")
 
@@ -9,7 +10,9 @@ export type Post = {
   title: string
   description: string
   date: Date
-  tags: string[]
+  series?: string
+  product?: string
+  topics: string[]
   issue?: number
   author?: string
   body: string
@@ -40,12 +43,30 @@ function readPost(file: string): Post {
   const raw = fs.readFileSync(path.join(ROOT, file), "utf8")
   const { data, content } = matter(raw)
   const slug = file.replace(/\.mdx?$/, "")
+
+  // series and product are optional, but if present must be registered — a
+  // typo'd slug fails the build rather than rendering a post unfilterable.
+  const series = data.series ? String(data.series) : undefined
+  if (series && !SERIES_SLUGS.has(series)) {
+    throw new Error(
+      `${file}: unknown series "${series}" — must be one of: ${[...SERIES_SLUGS].join(", ")}`
+    )
+  }
+  const product = data.product ? String(data.product) : undefined
+  if (product && !PRODUCT_SLUGS.has(product)) {
+    throw new Error(
+      `${file}: unknown product "${product}" — must be one of: ${[...PRODUCT_SLUGS].join(", ")}`
+    )
+  }
+
   return {
     slug,
     title: String(data.title ?? slug),
     description: String(data.description ?? ""),
     date: coerceDate(data.pubDate ?? data.date),
-    tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
+    series,
+    product,
+    topics: Array.isArray(data.topics) ? data.topics.map(String) : [],
     issue: typeof data.issue === "number" ? data.issue : undefined,
     author: data.author ? String(data.author) : undefined,
     body: content,
@@ -78,31 +99,43 @@ export function getPostBySlug(slug: string): Post | null {
   return readPost(file)
 }
 
-export function getAllTags(): string[] {
-  const seen = new Set<string>()
-  for (const post of getAllPosts()) {
-    for (const tag of post.tags) seen.add(tag)
-  }
-  return [...seen]
+// Every facet value a post can be filtered by, in reading order: series,
+// product, then topics. The one place facets flatten into filterable tags.
+export function postTags(p: Post): string[] {
+  return [p.series, p.product, ...p.topics].filter(Boolean) as string[]
 }
 
 export function getPostsByTag(tag: string): Post[] {
-  return getAllPosts().filter((p) => p.tags.includes(tag))
+  return getAllPosts().filter((p) => postTags(p).includes(tag))
 }
 
-// Posts sharing the most tags with `slug`, most-shared first then newest. If
-// none share a tag, fall back to the 2 most-recent posts. `slug` is excluded.
+// Registered series / products that have at least one published post — the set
+// the hero turns into clickable filters (empty series stay non-clickable).
+export function seriesWithPosts(): Set<string> {
+  const present = new Set<string>()
+  for (const p of getAllPosts()) if (p.series) present.add(p.series)
+  return present
+}
+
+export function productsWithPosts(): TagDef[] {
+  const present = new Set<string>()
+  for (const p of getAllPosts()) if (p.product) present.add(p.product)
+  return PRODUCTS.filter((p) => present.has(p.slug))
+}
+
+// Posts sharing the most facets with `slug`, most-shared first then newest. If
+// none share a facet, fall back to the 2 most-recent posts. `slug` is excluded.
 export function getRelatedPosts(slug: string, limit = 3): Post[] {
   const all = getAllPosts()
   const others = all.filter((p) => p.slug !== slug)
   const current = all.find((p) => p.slug === slug)
   if (!current) return others.slice(0, 2)
 
-  const currentTags = new Set(current.tags)
+  const currentTags = new Set(postTags(current))
   const shared = others
     .map((post) => ({
       post,
-      count: post.tags.filter((t) => currentTags.has(t)).length,
+      count: postTags(post).filter((t) => currentTags.has(t)).length,
     }))
     .filter((x) => x.count > 0)
     .sort((a, b) => b.count - a.count || b.post.date.getTime() - a.post.date.getTime())

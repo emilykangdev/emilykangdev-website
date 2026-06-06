@@ -8,7 +8,7 @@ import { Hero } from "@/components/Hero"
 import { mdxComponents } from "@/components/mdxComponents"
 import { TagLink } from "@/components/TagLink"
 import { RelatedPosts } from "@/components/RelatedPosts"
-import { getAllPosts, getPostBySlug, formatDate } from "@/lib/posts"
+import { getAllPosts, getPostBySlug, formatDate, postTags } from "@/lib/posts"
 
 export const dynamicParams = false
 
@@ -51,7 +51,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
           <time dateTime={post.date.toISOString().slice(0, 10)}>
             {formatDate(post.date)}
           </time>
-          {post.tags.map((t) => (
+          {postTags(post).map((t) => (
             <TagLink key={t} tag={t} variant="byline-tag" />
           ))}
           <span className="byline-author">{post.author ?? "Emily Kang"}</span>
