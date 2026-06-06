@@ -16,7 +16,14 @@ export default function BlogIndexPage() {
         variant="index"
         eyebrow="Field notes"
         title="Writing"
-      />
+      >
+        {/* TODO(Emily): replace with final copy — one short line signaling this
+            is one mind across building and thinking (software, essays, games). */}
+        <p className="hero-sub">
+          [PLACEHOLDER — one line: one mind across building and thinking —
+          software, essays, and games.]
+        </p>
+      </Hero>
       <div className="page-body">
         <WritingIndex />
       </div>
