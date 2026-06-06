@@ -14,6 +14,7 @@ Visit `http://localhost:3000` to see the site.
 ## Structure
 
 - `app/page.tsx` — Main portfolio page
+- `content/blog/` — Blog posts (MDX); frontmatter format documented in `docs/blog-frontmatter.md`
 - `app/layout.tsx` — Root layout with metadata
 - `app/globals.css` — All styling (simple, responsive)
 - `package.json` — Next.js dependencies
