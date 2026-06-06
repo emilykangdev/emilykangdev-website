@@ -1,8 +1,7 @@
 import Link from "next/link"
 import { getAllPosts, formatDate, getYear, type Post } from "@/lib/posts"
 
-export function WritingIndex() {
-  const posts = getAllPosts()
+export function WritingIndex({ posts = getAllPosts() }: { posts?: Post[] } = {}) {
   const years = groupByYear(posts)
 
   return (
