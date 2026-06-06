@@ -83,17 +83,20 @@ function parseTopics(file: string, raw: unknown): string[] {
     throw new Error(`${file}: topics must be a list, got ${JSON.stringify(raw)}`)
   }
   const topics: string[] = []
-  for (const t of raw) {
-    if (typeof t !== "string" || t.trim() === "") {
-      throw new Error(`${file}: each topic must be a non-empty string, got ${JSON.stringify(t)}`)
+  for (const entry of raw) {
+    if (typeof entry !== "string" || entry.trim() === "") {
+      throw new Error(`${file}: each topic must be a non-empty string, got ${JSON.stringify(entry)}`)
     }
-    if (SERIES_SLUGS.has(t) || PRODUCT_SLUGS.has(t)) {
-      throw new Error(`${file}: topic "${t}" collides with a registered series/product slug — rename it`)
+    // Normalize before every check + storage so padded variants (" security ")
+    // can't bypass dedup or the slug-collision guard, then collapse in HTML.
+    const topic = entry.trim()
+    if (SERIES_SLUGS.has(topic) || PRODUCT_SLUGS.has(topic)) {
+      throw new Error(`${file}: topic "${topic}" collides with a registered series/product slug — rename it`)
     }
-    if (topics.includes(t)) {
-      throw new Error(`${file}: duplicate topic "${t}"`)
+    if (topics.includes(topic)) {
+      throw new Error(`${file}: duplicate topic "${topic}"`)
     }
-    topics.push(t)
+    topics.push(topic)
   }
   return topics
 }
