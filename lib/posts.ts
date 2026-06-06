@@ -1,6 +1,7 @@
 import fs from "node:fs"
 import path from "node:path"
 import matter from "gray-matter"
+import { PRODUCTS, SERIES_SLUGS, PRODUCT_SLUGS, type TagDef } from "./taxonomy"
 
 const ROOT = path.join(process.cwd(), "content/blog")
 
@@ -9,7 +10,9 @@ export type Post = {
   title: string
   description: string
   date: Date
-  tags: string[]
+  series?: string
+  product?: string
+  topics: string[]
   issue?: number
   author?: string
   body: string
@@ -40,16 +43,62 @@ function readPost(file: string): Post {
   const raw = fs.readFileSync(path.join(ROOT, file), "utf8")
   const { data, content } = matter(raw)
   const slug = file.replace(/\.mdx?$/, "")
+
+  // series and product are optional, but if present must be registered — a
+  // typo'd slug fails the build rather than rendering a post unfilterable.
+  const series = data.series ? String(data.series) : undefined
+  if (series && !SERIES_SLUGS.has(series)) {
+    throw new Error(
+      `${file}: unknown series "${series}" — must be one of: ${[...SERIES_SLUGS].join(", ")}`
+    )
+  }
+  const product = data.product ? String(data.product) : undefined
+  if (product && !PRODUCT_SLUGS.has(product)) {
+    throw new Error(
+      `${file}: unknown product "${product}" — must be one of: ${[...PRODUCT_SLUGS].join(", ")}`
+    )
+  }
+
   return {
     slug,
     title: String(data.title ?? slug),
     description: String(data.description ?? ""),
     date: coerceDate(data.pubDate ?? data.date),
-    tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
+    series,
+    product,
+    topics: parseTopics(file, data.topics),
     issue: typeof data.issue === "number" ? data.issue : undefined,
     author: data.author ? String(data.author) : undefined,
     body: content,
   }
+}
+
+// Topics are freeform, but they share one filter namespace with series/products,
+// so they must be a list of unique, non-empty strings that don't collide with a
+// registered slug. A scalar (`topics: security`) or a collision fails the build
+// rather than silently dropping or contaminating a facet.
+function parseTopics(file: string, raw: unknown): string[] {
+  if (raw === undefined) return []
+  if (!Array.isArray(raw)) {
+    throw new Error(`${file}: topics must be a list, got ${JSON.stringify(raw)}`)
+  }
+  const topics: string[] = []
+  for (const entry of raw) {
+    if (typeof entry !== "string" || entry.trim() === "") {
+      throw new Error(`${file}: each topic must be a non-empty string, got ${JSON.stringify(entry)}`)
+    }
+    // Normalize before every check + storage so padded variants (" security ")
+    // can't bypass dedup or the slug-collision guard, then collapse in HTML.
+    const topic = entry.trim()
+    if (SERIES_SLUGS.has(topic) || PRODUCT_SLUGS.has(topic)) {
+      throw new Error(`${file}: topic "${topic}" collides with a registered series/product slug — rename it`)
+    }
+    if (topics.includes(topic)) {
+      throw new Error(`${file}: duplicate topic "${topic}"`)
+    }
+    topics.push(topic)
+  }
+  return topics
 }
 
 function isDraft(file: string): boolean {
@@ -76,4 +125,49 @@ export function getPostBySlug(slug: string): Post | null {
     .find((f) => f.replace(/\.mdx?$/, "") === slug)
   if (!file) return null
   return readPost(file)
+}
+
+// Every facet value a post can be filtered by, in reading order: series,
+// product, then topics. The one place facets flatten into filterable tags.
+export function postTags(p: Post): string[] {
+  return [p.series, p.product, ...p.topics].filter(Boolean) as string[]
+}
+
+export function getPostsByTag(tag: string): Post[] {
+  return getAllPosts().filter((p) => postTags(p).includes(tag))
+}
+
+// Registered series / products that have at least one published post — the set
+// the hero turns into clickable filters (empty series stay non-clickable).
+export function seriesWithPosts(): Set<string> {
+  const present = new Set<string>()
+  for (const p of getAllPosts()) if (p.series) present.add(p.series)
+  return present
+}
+
+export function productsWithPosts(): TagDef[] {
+  const present = new Set<string>()
+  for (const p of getAllPosts()) if (p.product) present.add(p.product)
+  return PRODUCTS.filter((p) => present.has(p.slug))
+}
+
+// Posts sharing the most facets with `slug`, most-shared first then newest. If
+// none share a facet, fall back to the 2 most-recent posts. `slug` is excluded.
+export function getRelatedPosts(slug: string, limit = 3): Post[] {
+  const all = getAllPosts()
+  const others = all.filter((p) => p.slug !== slug)
+  const current = all.find((p) => p.slug === slug)
+  if (!current) return others.slice(0, 2)
+
+  const currentTags = new Set(postTags(current))
+  const shared = others
+    .map((post) => ({
+      post,
+      count: postTags(post).filter((t) => currentTags.has(t)).length,
+    }))
+    .filter((x) => x.count > 0)
+    .sort((a, b) => b.count - a.count || b.post.date.getTime() - a.post.date.getTime())
+
+  if (shared.length === 0) return others.slice(0, 2)
+  return shared.slice(0, limit).map((x) => x.post)
 }

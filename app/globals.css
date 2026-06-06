@@ -511,6 +511,95 @@ a {
   margin: clamp(1.5rem, 4vh, 3rem) auto 0;
   padding: 0 clamp(1.1rem, 4vw, 2.5rem);
 }
+/* Series guide in the blog hero — a quiet legend; live series link, empty rest. */
+.series-guide {
+  list-style: none;
+  margin-top: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  max-width: 62ch;
+}
+.series-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+.series-name {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.series-name:hover {
+  text-decoration: underline;
+}
+.series-name--empty {
+  color: var(--muted);
+  opacity: 0.65;
+}
+.series-blurb {
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+.series-products {
+  margin-top: 1.2rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.series-products-label {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+/* Active-filter chip + clear (×) on the index. */
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: var(--pill-bg);
+  border-radius: 999px;
+  padding: 0.28rem 0.4rem 0.28rem 0.85rem;
+  margin-bottom: clamp(1.25rem, 3vh, 1.75rem);
+}
+.filter-chip strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.filter-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 999px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+.filter-clear:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.filter-empty {
+  color: var(--muted);
+  font-size: 1rem;
+}
 .year-group {
   margin-bottom: clamp(2.5rem, 6vh, 4rem);
 }
@@ -591,6 +680,17 @@ a {
   border-radius: 999px;
   padding: 0.18rem 0.55rem;
 }
+/* Tags are now links; keep them quiet, lift only on hover. */
+a.tag,
+a.byline-tag {
+  text-decoration: none;
+  transition: color 0.18s ease, background-color 0.18s ease;
+}
+a.tag:hover,
+a.byline-tag:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 16%, var(--pill-bg));
+}
 
 /* ============================================================
    READING (single post)
@@ -618,6 +718,29 @@ a {
   padding-top: 1.5rem;
   border-top: 1px solid var(--hairline);
   width: 100%;
+}
+/* Related posts — quiet block above the closing back-link. */
+.related {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--hairline);
+}
+.related-label {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+  margin-bottom: 1.25rem;
+}
+.related-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.related-item .post-row-meta {
+  margin-top: 0.4rem;
 }
 .byline {
   display: flex;
