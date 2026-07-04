@@ -63,7 +63,16 @@ export function NewsletterSignup({ variant }: { variant?: "footer" }) {
           {message}
         </p>
       ) : (
-        <form className="newsletter-form" onSubmit={onSubmit} noValidate>
+        <form
+          className="newsletter-form"
+          action={ENDPOINT}
+          method="post"
+          onSubmit={onSubmit}
+          noValidate
+        >
+          {/* Native action/method is the no-JS + pre-hydration fallback: it
+              POSTs to Buttondown (real subscribe, no email in a GET URL). After
+              hydration, onSubmit's preventDefault takes over for the on-site flow. */}
           <input
             id={id}
             className="newsletter-input"
