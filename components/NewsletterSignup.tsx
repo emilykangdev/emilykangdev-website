@@ -8,7 +8,17 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 
 type Status = "idle" | "submitting" | "done" | "error"
 
-export function NewsletterSignup({ variant }: { variant?: "footer" }) {
+export function NewsletterSignup({
+  variant,
+  tag,
+  lede,
+}: {
+  variant?: "footer"
+  /** Buttondown tag applied to the subscriber on signup (see /tags docs). */
+  tag?: string
+  /** Overrides the default "Random topics…" lede when set. */
+  lede?: string
+}) {
   const [email, setEmail] = useState("")
   const [status, setStatus] = useState<Status>("idle")
   const [message, setMessage] = useState("")
@@ -32,7 +42,7 @@ export function NewsletterSignup({ variant }: { variant?: "footer" }) {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ email: email.trim() }),
+        body: new URLSearchParams(tag ? { email: email.trim(), tag } : { email: email.trim() }),
       })
       setStatus("done")
       setMessage("Thanks — check your inbox to confirm.")
@@ -53,8 +63,8 @@ export function NewsletterSignup({ variant }: { variant?: "footer" }) {
 
       {!isFooter && (
         <p className="newsletter-lede">
-          Random topics. Sign up if, somehow, the writing offers value and
-          encourages you to think. No regular cadence.
+          {lede ??
+            "Random topics. Sign up if, somehow, the writing offers value and encourages you to think. No regular cadence."}
         </p>
       )}
 
@@ -73,6 +83,7 @@ export function NewsletterSignup({ variant }: { variant?: "footer" }) {
           {/* Native action/method is the no-JS + pre-hydration fallback: it
               POSTs to Buttondown (real subscribe, no email in a GET URL). After
               hydration, onSubmit's preventDefault takes over for the on-site flow. */}
+          {tag && <input type="hidden" name="tag" value={tag} />}
           <input
             id={id}
             className="newsletter-input"
