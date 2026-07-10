@@ -9,14 +9,15 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 type Status = "idle" | "submitting" | "done" | "error"
 type Scope = "everything" | "bbq"
 
-// Tag scheme: `general` = the regular newsletter (Building and Thinking and
-// everything else), `bbq` = the Better Business Questions series.
-// "Everything" subscribers carry both tags; "BBQ only" subscribers carry
-// just `bbq`. Sends must target these tags explicitly going forward —
-// targeting "Everyone" would ignore the split and reach BBQ-only
-// subscribers with general posts too.
+// Tag scheme: `all` = the regular newsletter (Building and Thinking and
+// everything else — it already includes BBQ), `bbq` = the Better Business
+// Questions series on its own. The two are mutually exclusive: a subscriber
+// carries exactly one, never both — `all` is the superset, so it's never
+// combined with `bbq`. Sends must target these tags explicitly going
+// forward: general posts -> tag `all` only; BBQ posts -> Everyone (both
+// tiers want BBQ, since `all` already includes it).
 const SCOPE_TAGS: Record<Scope, string[]> = {
-  everything: ["general", "bbq"],
+  everything: ["all"],
   bbq: ["bbq"],
 }
 
