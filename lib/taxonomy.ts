@@ -13,6 +13,7 @@ export const SERIES: TagDef[] = [
   { slug: "society-essays", label: "Society essays" },
   { slug: "product-posts", label: "Product posts" },
   { slug: "game-dev", label: "Game dev" },
+  { slug: "better-business-questions", label: "Better business questions" },
 ]
 
 export const PRODUCTS: TagDef[] = [{ slug: "mortrel", label: "Mortrel" }]
