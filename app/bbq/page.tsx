@@ -21,8 +21,8 @@ export default function BetterBusinessQuestionsPage() {
       </Hero>
 
       <NewsletterSignup
-        tag="bbq"
-        lede="This is a tag on my regular newsletter, not a separate list — subscribing here only opts you into Better Business Questions posts. Manage what you get anytime from the confirmation email's account link."
+        defaultScope="bbq"
+        lede="This is a tag on my regular newsletter, not a separate list — pick which posts you want below. Manage your choice anytime from the confirmation email's account link."
       />
 
       <p style={{ textAlign: "center", marginTop: "2rem" }}>

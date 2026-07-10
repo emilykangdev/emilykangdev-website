@@ -7,19 +7,32 @@ const ENDPOINT = `https://buttondown.com/api/emails/embed-subscribe/${BUTTONDOWN
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 
 type Status = "idle" | "submitting" | "done" | "error"
+type Scope = "everything" | "bbq"
+
+// Tag scheme: `general` = the regular newsletter (Building and Thinking and
+// everything else), `bbq` = the Better Business Questions series.
+// "Everything" subscribers carry both tags; "BBQ only" subscribers carry
+// just `bbq`. Sends must target these tags explicitly going forward —
+// targeting "Everyone" would ignore the split and reach BBQ-only
+// subscribers with general posts too.
+const SCOPE_TAGS: Record<Scope, string[]> = {
+  everything: ["general", "bbq"],
+  bbq: ["bbq"],
+}
 
 export function NewsletterSignup({
   variant,
-  tag,
+  defaultScope = "everything",
   lede,
 }: {
   variant?: "footer"
-  /** Buttondown tag applied to the subscriber on signup (see /tags docs). */
-  tag?: string
+  /** Preselected choice — "bbq" on the BBQ landing page, "everything" elsewhere. */
+  defaultScope?: Scope
   /** Overrides the default "Random topics…" lede when set. */
   lede?: string
 }) {
   const [email, setEmail] = useState("")
+  const [scope, setScope] = useState<Scope>(defaultScope)
   const [status, setStatus] = useState<Status>("idle")
   const [message, setMessage] = useState("")
   const id = useId()
@@ -38,11 +51,13 @@ export function NewsletterSignup({
       // no-cors: the embed endpoint 302-redirects to a page without CORS
       // headers, so we fire-and-forget. An opaque response still means the
       // POST landed; only a thrown error is a real failure.
+      const body = new URLSearchParams({ email: email.trim() })
+      for (const t of SCOPE_TAGS[scope]) body.append("tag", t)
       await fetch(ENDPOINT, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams(tag ? { email: email.trim(), tag } : { email: email.trim() }),
+        body,
       })
       setStatus("done")
       setMessage("Thanks — check your inbox to confirm.")
@@ -83,7 +98,34 @@ export function NewsletterSignup({
           {/* Native action/method is the no-JS + pre-hydration fallback: it
               POSTs to Buttondown (real subscribe, no email in a GET URL). After
               hydration, onSubmit's preventDefault takes over for the on-site flow. */}
-          {tag && <input type="hidden" name="tag" value={tag} />}
+          {!isFooter && (
+            <fieldset className="newsletter-scope">
+              <legend className="newsletter-scope-legend">What do you want?</legend>
+              <label className="newsletter-scope-option">
+                <input
+                  type="radio"
+                  name="scope"
+                  value="everything"
+                  checked={scope === "everything"}
+                  onChange={() => setScope("everything")}
+                />
+                Everything
+              </label>
+              <label className="newsletter-scope-option">
+                <input
+                  type="radio"
+                  name="scope"
+                  value="bbq"
+                  checked={scope === "bbq"}
+                  onChange={() => setScope("bbq")}
+                />
+                Better Business Questions (BBQ) series only
+              </label>
+            </fieldset>
+          )}
+          {SCOPE_TAGS[scope].map((t) => (
+            <input key={t} type="hidden" name="tag" value={t} />
+          ))}
           <input
             id={id}
             className="newsletter-input"

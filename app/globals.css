@@ -1084,6 +1084,37 @@ a.byline-tag:hover {
 .newsletter-status[data-state="done"] {
   color: var(--accent-2);
 }
+.newsletter-scope {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.2rem;
+  border: none;
+  margin: 0 0 0.2rem;
+  padding: 0;
+}
+.newsletter-scope-legend {
+  flex-basis: 100%;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  padding: 0;
+  margin-bottom: 0.15rem;
+}
+.newsletter-scope-option {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--serif);
+  font-size: 0.92rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+.newsletter-scope-option input[type="radio"] {
+  accent-color: var(--accent);
+}
 
 /* Footer variant — no separator (the footer supplies its own), compact. */
 .newsletter--footer {
