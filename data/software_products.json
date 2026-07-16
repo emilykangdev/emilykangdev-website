@@ -3,7 +3,7 @@
     "name": "Mortrel",
     "tagline": "AI-native calendar for reflection and self-awareness",
     "description": "An AI-native calendar focused on reflection and self-awareness. Shipping end-to-end encryption June 2, 2026, with a blog post on signal coding; full UX release early August.",
-    "status": "shipping",
+    "status": "in-development",
     "link": "https://mortrel.com/",
     "linkType": "website",
     "featured": true
@@ -12,7 +12,7 @@
     "name": "Stower",
     "tagline": "AI-native search across your Photos and Messages",
     "description": "AI-native search across your Photos and Messages, built in Swift. Turns your digital history into something actually navigable.",
-    "status": "in-development",
+    "status": "shipping",
     "link": "https://github.com/emilykangdev/stower",
     "linkType": "github",
     "featured": true
@@ -20,7 +20,7 @@
   {
     "name": "Kern",
     "tagline": "An infinite canvas for making connections",
-    "description": "An infinite-canvas notes app — a thinking tool for making connections, not a vault for storing things.",
+    "description": "An infinite-canvas notes app \u2014 a thinking tool for making connections, not a vault for storing things.",
     "status": "planned",
     "link": "",
     "linkType": "website",
