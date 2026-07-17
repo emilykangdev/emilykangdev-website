@@ -19,9 +19,9 @@ export default function ContractPage() {
             <strong><a href="https://github.com/emilykangdev/stower">Stower</a></strong> from scratch. It&rsquo;s a Mac app that reads
             iMessage&rsquo;s database and lets you write drafts for important
             conversations. It&rsquo;s shipping, and I&rsquo;m working on getting
-            it into the Mac App Store. I&rsquo;ve also built PodcastBrief, an
+            it into the Mac App Store. I&rsquo;ve also built <strong><a href="https://github.com/emilykangdev/podcast-brief">PodcastBrief</a></strong>, an
             AI-powered pipeline that digests podcast feeds into structured
-            briefs.
+            briefs with references.
           </p>
           <p>
             My process is spec-first: I write down exactly what needs to happen,
