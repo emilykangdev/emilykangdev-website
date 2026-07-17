@@ -1,11 +1,6 @@
-import { NewsletterSignup } from "@/components/NewsletterSignup"
-
 export function Footer() {
   return (
     <footer className="footer">
-      <div className="footer-newsletter">
-        <NewsletterSignup variant="footer" />
-      </div>
       <div className="footer-inner">
         <span className="footer-mark">emilykang.dev</span>
         <span className="footer-note">

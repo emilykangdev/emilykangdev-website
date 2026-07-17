@@ -7,6 +7,7 @@ import { ThemeToggle } from "./ThemeToggle"
 const LINKS = [
   { label: "Work", href: "/#work" },
   { label: "Writing", href: "/blog" },
+  { label: "Contracting", href: "/contract" },
   { label: "Contact", href: "/#contact" },
 ]
 

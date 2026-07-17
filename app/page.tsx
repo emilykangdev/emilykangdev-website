@@ -49,8 +49,7 @@ export default function Home() {
           Let&rsquo;s connect
         </h2>
         <p className="connect-lead">
-          Open to result-based contracts, full-time roles, and conversations
-          about execution and shipping.
+          Open to result-based contracts and conversations about anything interesting.
         </p>
         <div className="connect-links">
           <a className="connect-link" href="mailto:emily@emilykang.dev">
