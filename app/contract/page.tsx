@@ -16,7 +16,7 @@ export default function ContractPage() {
           <h2>What I do</h2>
           <p>
             I&rsquo;m a solo entrepreneur and product engineer. I built{" "}
-            <strong>Stower</strong> from scratch. It&rsquo;s a Mac app that reads
+            <strong><a href="https://github.com/emilykangdev/stower">Stower</a></strong> from scratch. It&rsquo;s a Mac app that reads
             iMessage&rsquo;s database and lets you write drafts for important
             conversations. It&rsquo;s shipping, and I&rsquo;m working on getting
             it into the Mac App Store. I&rsquo;ve also built PodcastBrief, an
