@@ -10,7 +10,7 @@ export type TagDef = { slug: string; label: string }
 export const SERIES: TagDef[] = [
   { slug: "autonomous-companies", label: "Autonomous companies" },
   { slug: "signals-over-vibes", label: "Signals over vibes" },
-  { slug: "society-essays", label: "Society essays" },
+  { slug: "society-essays", label: "Society" },
   { slug: "product-posts", label: "Product posts" },
   { slug: "game-dev", label: "Game dev" },
   { slug: "better-business-questions", label: "Better business questions" },
