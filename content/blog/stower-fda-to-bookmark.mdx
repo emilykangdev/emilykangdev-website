@@ -1,0 +1,77 @@
+---
+title: "From Full Disk Access to security-scoped bookmarks"
+description: "Stower stopped asking for broad Full Disk Access and redesigned around a narrower, testable access model — security-scoped bookmarks via the App Sandbox."
+pubDate: "2026-07-18"
+issue: 9
+draft: false
+series: "product-posts"
+product: "stower"
+topics: ["macos", "security", "app-sandbox"]
+---
+
+Stower stopped asking for broad Full Disk Access, and redesigned around a narrower, testable access model.
+
+# The wrong research that led to FDA
+
+Full Disk Access means the app is granted read and write access to any file on your Mac. It's granted by Apple's privacy daemon called Transparency, Consent, and Control (TCC). Some apps may truly require FDA, like filesystem cleaners or antivirus apps. Assuming the app isn't malicious, FDA isn't something to grant lightly: if it has any exposed file-editing behavior, another un-sandboxed app could use it to do things it shouldn't be able to do (Lapcat reference). 
+
+Stower just reads Message's `chat.db`. It didn't need FDA. So how did I even decide on this in the first place?
+
+I'm not a senior software engineer, and I have little experience with the Apple ecosystem. For any project, the first thing I use for larger architectural decisions is deep research, so AI can propose some approaches. If I'm unclear on anything, I ask questions and try to understand the relevant concepts. Then I decide, because I have context on the product vision and my available resources, or I go with AI's recommendation.
+
+For example, I had AI look at industry standards for mac apps, and see what other well-known mac apps do in their public repos.
+
+But my research failed right at the start.
+
+My first pass assumed direct `chat.db` access meant Full Disk Access, and I built my plan around that assumption before I had really challenged it. AI didn't challenge the research, and I didn't require it to.
+
+Here's my research improvement: I added one last step to the `cited-research` skill I rely on daily, to just list all the assumptions in the research synthesis to the user. 
+
+Personally, I'll just be more thorough and critical when reading research, rather than assuming it'll be comprehensive just because it has real references for every claim. 
+
+I learned one new thing about Mac app development. Through experience, I'm a bit better equipped to pick the right permissions.
+
+# App Sandbox's extension (bookmark) approach
+
+I went through the onboarding of another Mac app that analyzes iMessages. Mimoto, for example, just point the user to the Messages folder, they pick it, and the app can read it. I was genuinely surprised it was on the Mac App Store. That was when I learned there's another way. 
+
+The App Sandbox is MacOS's access control system that's enforced by the kernel. All apps on MAS are sandboxed, so they have their own containers. 
+
+I started with a plan to move Stower into a sandbox. Functions that implement FDA access would be deleted, references to it in comments, and any existing files should be modified to use. Here's the [PR](https://github.com/emilykangdev/stower/pull/66 ) for this migration. 
+
+And this is the design that I ended up with, starting from the top. 
+
+## App entitlements
+
+Entitlements are app permissions baked into the Mac app's signature, and they're expressed as key value pairs. They can't be changed by the app itself. That's why the OS can check the `.entitlements` file at runtime, and accept them as the ground truth for what the app can access.
+
+For example, here's what the [entitlements file](https://github.com/emilykangdev/stower/blob/main/StowerMac/StowerMac/StowerMac.entitlements) has:
+
+```
+  <key>com.apple.security.app-sandbox</key>
+  <true/>
+  <key>com.apple.security.files.user-selected.read-only</key>
+  <true/>
+  <key>com.apple.security.personal-information.addressbook</key>
+  <true/>
+  <key>com.apple.security.network.client</key>
+  <true/>
+```
+
+This makes Stower run inside the macOS App Sandbox. It can only read the path (URL) the user selects, not write. It can ask for contacts access, and make outbound network requests. Stower uses this for licensing and analytics.
+
+Apple's `Foundation` framework offers the basic building blocks of apps. 
+
+Even if Stower tried to add write permission to the selected Foundation `URL`'s `bookmarkData`, the sandbox would refuse to grant the scope for it. And yes, `bookmarkData` is a real function name in the `URL` struct.
+
+## The overall lifecycle 
+
+AppKit is a UI framework for macOS made by Apple.
+
+Stower uses AppKit to open the Messages folder in Finder using `NSOpenPanel`, and the user can just click confirm to grant read access to that path. `Foundation` makes a blob for the bookmark and it's stored in Stower's user defaults.
+
+Whenever the app wants to read the chat DB, it calls `StowerChatDatabaseReader`. The Foundation API confirms if the blob is valid or not. If it's valid, Stower works as usual. If it's invalid, it shows the folder picker again, the user confirms and it works. 
+
+## What next
+
+I plan to distribute Stower on MAS to reach more customers. It'll have a new build target and some more changes, like removing Sparkle, Lemon Squeezy and analytics, to fit with MAS requirements.
