@@ -1013,6 +1013,56 @@ a.byline-tag:hover {
 }
 
 /* ============================================================
+   SUBSCRIBE FORM (Beehiiv embed)
+   ============================================================ */
+.subscribe {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 clamp(1.1rem, 4vw, 2.5rem);
+}
+.subscribe--compact {
+  padding: 2rem clamp(1.1rem, 4vw, 2.5rem) 1rem;
+}
+.subscribe-inner {
+  max-width: 520px;
+  margin: 0 auto;
+  text-align: center;
+}
+.subscribe-heading {
+  font-family: var(--serif);
+  font-size: clamp(1.1rem, 2.2vw, 1.35rem);
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+.subscribe-blurb {
+  font-size: 0.95rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+.subscribe-embed {
+  border: none;
+  border-radius: 8px;
+  overflow: hidden;
+  background: transparent;
+}
+/* On the blog post page, the subscribe block sits between RelatedPosts and the
+   closing back-link — same spacing as the related section. */
+.reading .subscribe {
+  margin-top: 3rem;
+  padding: 1.5rem 0 0;
+  border-top: 1px solid var(--hairline);
+}
+.reading .subscribe-inner {
+  max-width: 460px;
+}
+
+/* Quiet placeholder when publication ID is not yet configured. */
+.subscribe-placeholder {
+  display: none;
+}
+
+/* ============================================================
    FOOTER
    ============================================================ */
 .footer {

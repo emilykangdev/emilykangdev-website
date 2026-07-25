@@ -16,7 +16,10 @@ export const SERIES: TagDef[] = [
   { slug: "better-business-questions", label: "Better business questions" },
 ]
 
-export const PRODUCTS: TagDef[] = [{ slug: "mortrel", label: "Mortrel" }]
+export const PRODUCTS: TagDef[] = [
+  { slug: "mortrel", label: "Mortrel" },
+  { slug: "stower", label: "Stower" },
+]
 
 export const SERIES_SLUGS = new Set(SERIES.map((s) => s.slug))
 export const PRODUCT_SLUGS = new Set(PRODUCTS.map((p) => p.slug))
