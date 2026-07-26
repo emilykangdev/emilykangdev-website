@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { Hero } from "@/components/Hero";
 import { WritingIndex } from "@/components/WritingIndex";
+import { SubscribeForm } from "@/components/SubscribeForm";
 import { getPostsByTag, seriesWithPosts, productsWithPosts } from "@/lib/posts";
 import { SERIES, labelFor } from "@/lib/taxonomy";
 
@@ -35,6 +37,10 @@ export default function BlogIndexPage({
   const liveSeries = seriesWithPosts();
   const products = productsWithPosts();
   const posts = activeTag ? getPostsByTag(activeTag) : undefined;
+
+  const isBbqSubdomain =
+    activeTag === "better-business-questions" &&
+    (headers().get("host") ?? "").startsWith("bbq.");
 
   return (
     <main>
@@ -81,6 +87,12 @@ export default function BlogIndexPage({
       </Hero>
 
       <div className="page-body">
+        {isBbqSubdomain && (
+          <div className="bbq-banner">
+            <SubscribeForm />
+          </div>
+        )}
+
         {activeTag && (
           <p className="filter-chip">
             <span>

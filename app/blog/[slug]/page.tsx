@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { headers } from "next/headers"
 import { notFound } from "next/navigation"
 import { MDXRemote } from "next-mdx-remote/rsc"
 import remarkGfm from "remark-gfm"
@@ -33,6 +34,8 @@ export function generateMetadata({
 export default function PostPage({ params }: { params: { slug: string } }) {
   const post = getPostBySlug(params.slug)
   if (!post) notFound()
+
+  const onBbqSubdomain = (headers().get("host") ?? "").startsWith("bbq.")
 
   return (
     <main>
@@ -73,7 +76,9 @@ export default function PostPage({ params }: { params: { slug: string } }) {
 
         <RelatedPosts slug={post.slug} />
 
-        {post.series === "better-business-questions" && <SubscribeForm compact />}
+        {post.series === "better-business-questions" && !onBbqSubdomain && (
+          <SubscribeForm compact />
+        )}
 
         <Link className="back-link back-link--end" href="/blog">
           &larr; Back to writing
