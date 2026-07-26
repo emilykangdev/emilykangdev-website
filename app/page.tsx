@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { Hero } from "@/components/Hero"
+import { SubscribeForm } from "@/components/SubscribeForm"
 import { WorkList } from "@/components/WorkList"
 import { getAllPosts, formatDate } from "@/lib/posts"
 
@@ -67,6 +68,8 @@ export default function Home() {
           </a>
         </div>
       </section>
+
+      <SubscribeForm />
     </main>
   )
 }
