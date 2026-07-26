@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react"
 /**
  * Beehiiv subscribe form — loads the script-based embed with the BBQ
  * newsletter's form ID. The script injects into the container ref so
- * the form renders inside our layout, not at the bottom of <body>.
+ * the form renders inside our layout, not at the bottom of `<body>`.
  */
 export function SubscribeForm({
   compact = false,

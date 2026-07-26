@@ -48,8 +48,15 @@ export default function BlogIndexPage({
         day={null}
         night="/headers/night-crescent-stars.png"
         variant="index"
-        title="Building and Thinking"
+        title={isBbqSubdomain ? "Better Business Questions" : "Building and Thinking"}
       >
+        {isBbqSubdomain ? (
+          <p className="hero-sub">
+            Grilling the assumptions we take for granted about business today.
+            One question at a time.
+          </p>
+        ) : (
+          <>
         {/* TODO(Emily): final intro copy. */}
         <p className="hero-sub">
           One-off posts, plus a few ongoing series. Click a series to read only
@@ -84,6 +91,8 @@ export default function BlogIndexPage({
             ))}
           </p>
         )}
+        </>
+        )}
       </Hero>
 
       <div className="page-body">
@@ -93,7 +102,7 @@ export default function BlogIndexPage({
           </div>
         )}
 
-        {activeTag && (
+        {activeTag && !isBbqSubdomain && (
           <p className="filter-chip">
             <span>
               Showing <strong>{labelFor(activeTag)}</strong>
