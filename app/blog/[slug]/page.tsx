@@ -73,7 +73,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
 
         <RelatedPosts slug={post.slug} />
 
-        <SubscribeForm compact />
+        {post.series === "better-business-questions" && <SubscribeForm compact />}
 
         <Link className="back-link back-link--end" href="/blog">
           &larr; Back to writing
