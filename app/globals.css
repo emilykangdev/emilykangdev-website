@@ -1057,6 +1057,11 @@ a.byline-tag:hover {
   max-width: 460px;
 }
 
+/* BBQ subdomain subscribe banner — full-width embed above the post list. */
+.bbq-banner {
+  margin-bottom: 2rem;
+}
+
 /* Quiet placeholder when publication ID is not yet configured. */
 .subscribe-placeholder {
   display: none;

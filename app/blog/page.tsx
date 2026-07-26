@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { Hero } from "@/components/Hero";
 import { WritingIndex } from "@/components/WritingIndex";
+import { SubscribeForm } from "@/components/SubscribeForm";
 import { getPostsByTag, seriesWithPosts, productsWithPosts } from "@/lib/posts";
 import { SERIES, labelFor } from "@/lib/taxonomy";
 
@@ -36,14 +38,25 @@ export default function BlogIndexPage({
   const products = productsWithPosts();
   const posts = activeTag ? getPostsByTag(activeTag) : undefined;
 
+  const isBbqSubdomain =
+    activeTag === "better-business-questions" &&
+    (headers().get("host") ?? "").startsWith("bbq.");
+
   return (
     <main>
       <Hero
         day={null}
         night="/headers/night-crescent-stars.png"
         variant="index"
-        title="Building and Thinking"
+        title={isBbqSubdomain ? "Better Business Questions" : "Building and Thinking"}
       >
+        {isBbqSubdomain ? (
+          <p className="hero-sub">
+            Grilling the assumptions we take for granted about business today.
+            One question at a time.
+          </p>
+        ) : (
+          <>
         {/* TODO(Emily): final intro copy. */}
         <p className="hero-sub">
           One-off posts, plus a few ongoing series. Click a series to read only
@@ -78,10 +91,18 @@ export default function BlogIndexPage({
             ))}
           </p>
         )}
+        </>
+        )}
       </Hero>
 
       <div className="page-body">
-        {activeTag && (
+        {isBbqSubdomain && (
+          <div className="bbq-banner">
+            <SubscribeForm />
+          </div>
+        )}
+
+        {activeTag && !isBbqSubdomain && (
           <p className="filter-chip">
             <span>
               Showing <strong>{labelFor(activeTag)}</strong>
