@@ -15,19 +15,19 @@ export function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Root path and /blog on the BBQ subdomain → rewrite to the BBQ-filtered
-  // blog index so visitors see only better-business-questions posts with the
-  // subscribe form at the top.
-  if (pathname === "/" || pathname.startsWith("/blog")) {
+  // Root path and the blog index on the BBQ subdomain → rewrite to the
+  // BBQ-filtered blog index so visitors see only better-business-questions
+  // posts with the subscribe form at the top.
+  if (pathname === "/" || pathname === "/blog") {
     const url = request.nextUrl.clone()
     url.pathname = "/blog"
     url.searchParams.set("tag", BBQ_SERIES_TAG)
     return NextResponse.rewrite(url)
   }
 
-  // Everything else (Work anchor, Contracting, Contact, brand link) → main
-  // domain.  The user should never traverse the rest of the site through
-  // the BBQ subdomain.
+  // Individual posts and everything else (Work, Contracting, Contact, brand
+  // link) → main domain.  Individual posts are SSG and must render their
+  // own page, not the blog index, so they redirect out of the BBQ subdomain.
   return NextResponse.redirect(new URL(pathname, `https://${MAIN_HOST}`))
 }
 
