@@ -15,15 +15,14 @@ export function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Allow root path to pass through (rewritten by Vercel at the edge).
-  if (pathname === "/") return NextResponse.next()
-
-  // Blog pages from the BBQ subdomain → main domain with the series tag filter,
-  // so the existing ?tag= filtering in app/blog/page.tsx keeps working.
-  if (pathname.startsWith("/blog")) {
-    const dest = new URL(pathname, `https://${MAIN_HOST}`)
-    dest.searchParams.set("tag", BBQ_SERIES_TAG)
-    return NextResponse.redirect(dest)
+  // Root path and /blog on the BBQ subdomain → rewrite to the BBQ-filtered
+  // blog index so visitors see only better-business-questions posts with the
+  // subscribe form at the top.
+  if (pathname === "/" || pathname.startsWith("/blog")) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/blog"
+    url.searchParams.set("tag", BBQ_SERIES_TAG)
+    return NextResponse.rewrite(url)
   }
 
   // Everything else (Work anchor, Contracting, Contact, brand link) → main
